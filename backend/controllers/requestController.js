@@ -1,6 +1,6 @@
 const User = require("../model/user"); // Update the path as needed
 const mongoose = require("mongoose");
-const { sendNotification } = require("../config/firebase");
+// const { sendNotification } = require("../config/firebase");
 
 // const sentRequest = async (req, res) => {
 //   try {

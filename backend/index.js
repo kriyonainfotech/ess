@@ -16,10 +16,10 @@ app.use(bodyParser.json());
 const cors = require("cors");
 const corsOptions = {
   origin: [
+    "https://ess-frontend-xi.vercel.app",
     "https://ees121.com",
     "https://www.ees121.com",
     "http://localhost:5173",
-    "https://ess-frontend-xi.vercel.app",
   ], // Replace with the public IP of your frontend
   allowedHeaders: ["Content-Type", "Authorization"], // Add required headers
   methods: ["GET", "POST", "PUT", "DELETE"], // Add methods as needed
