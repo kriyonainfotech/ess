@@ -16,20 +16,9 @@ export const FCMProvider = ({ children }) => {
       const token = await getFcmToken();
       if (token) {
         setFcmToken(token);
-        // Get the authentication token from localStorage
-        const authToken = JSON.parse(localStorage.getItem('token'));
-
+        // Optionally save the token to your backend
         try {
-          await axios.post(
-            `${backend_API}/save-fcm-token`,
-            { token },
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
-              }
-            }
-          );
+          await axios.post(`${backend_API}/save-fcm-token`, { token });
         } catch (error) {
           console.error("Error saving FCM token:", error);
         }
