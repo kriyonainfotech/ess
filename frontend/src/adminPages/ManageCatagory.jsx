@@ -14,6 +14,9 @@ const ManageCatagory = () => {
     const [categories, setCategories] = useState([]);
     const [editcategory, setEditCategory] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(0);
+    const limit = 20; // Items per page
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -29,8 +32,9 @@ const ManageCatagory = () => {
             const response = await axios.post(`${backend_API}/category/addCategory`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
-            toast(response?.data?.message)
-            fetchCategory();
+            toast(response?.data?.message);
+            setCurrentPage(1); // Reset to first page
+            fetchCategory(1); // Fetch first page after adding
 
             const modalCloseButton = document.querySelector("[data-bs-dismiss='modal']");
             if (modalCloseButton) modalCloseButton.click();
@@ -39,39 +43,53 @@ const ManageCatagory = () => {
             setCategoryImg(null);
             setPreview(null);
         } catch (error) {
-            toast(error?.response?.data?.message)
+            toast(error?.response?.data?.message);
         }
     };
 
-    const fetchCategory = async () => {
+    const fetchCategory = async (page = 1) => {
         try {
-            const response = await axios.get(`${backend_API}/category/getAllCategory`);
-            setCategories(response.data.category.sort((a, b) => a.categoryName.localeCompare(b.categoryName)));
+            setLoading(true);
+            const response = await axios.get(`${backend_API}/category/getAllCategory`, {
+                params: {
+                    page: page,
+                    limit: limit
+                }
+            });
+
+            if (response.data.success) {
+                setCategories(response.data.category);
+                setTotalPages(response.data.totalPages);
+                setCurrentPage(page);
+            } else {
+                toast.error("Failed to fetch categories");
+            }
         } catch (error) {
             console.error("Error fetching categories:", error);
-            toast(error?.response?.data?.message)
+            toast.error(error?.response?.data?.message || "Error fetching categories");
+        } finally {
+            setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchCategory();
-    }, []);
+        fetchCategory(currentPage);
+    }, [currentPage]); // This will handle the page changes
 
     const handleDelete = async (categoryId) => {
         toast.info(
             <div>
-              <p>Are you sure you want to delete this request?</p>
-              <div className="d-flex justify-content-center gap-2">
-                <button className="btn btn-danger btn-sm" onClick={() => confirmDelete(categoryId)}>Yes</button>
-                <button className="btn btn-secondary btn-sm" onClick={toast.dismiss}>No</button>
-              </div>
+                <p>Are you sure you want to delete this request?</p>
+                <div className="d-flex justify-content-center gap-2">
+                    <button className="btn btn-danger btn-sm" onClick={() => confirmDelete(categoryId)}>Yes</button>
+                    <button className="btn btn-secondary btn-sm" onClick={toast.dismiss}>No</button>
+                </div>
             </div>,
-           { autoClose: true, closeOnClick: true }
-          );
-        };
-        const confirmDelete = async(categoryId) => {
-            toast.dismiss(); // Close the confirmation toast
-          
+            { autoClose: true, closeOnClick: true }
+        );
+    };
+    const confirmDelete = async (categoryId) => {
+        toast.dismiss();
         try {
             const response = await axios.delete(`${backend_API}/category/deleteCategory`, {
                 headers: { 'Content-Type': 'application/json' },
@@ -79,14 +97,20 @@ const ManageCatagory = () => {
             });
 
             if (response.status === 200) {
-                alert("Category deleted successfully.");
-                fetchCategory();
+                toast.success("Category deleted successfully.");
+                // If we're on a page with only one item and it's not the first page,
+                // go to previous page after deletion
+                if (categories.length === 1 && currentPage > 1) {
+                    setCurrentPage(prev => prev - 1);
+                } else {
+                    fetchCategory(currentPage); // Refresh current page
+                }
             } else {
-                alert("Failed to delete category. Please try again.");
+                toast.error("Failed to delete category. Please try again.");
             }
         } catch (error) {
             console.error("Error deleting category:", error);
-            alert("Failed to delete category. Check console for more details.");
+            toast.error("Failed to delete category. Check console for more details.");
         }
     };
 
@@ -103,6 +127,36 @@ const ManageCatagory = () => {
             alert("Please select a valid image file.");
         }
     };
+
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= totalPages) {
+            setCurrentPage(newPage);
+            fetchCategory(newPage);
+            // Scroll to top smoothly
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+    };
+
+
+    const renderPaginationButtons = () => {
+        if (totalPages <= 1) return null; // Hide pagination if only one page exists
+
+        const pages = [];
+        for (let i = 1; i <= totalPages; i++) {
+            pages.push(
+                <li key={i} className={`page-item ${currentPage === i ? 'active' : ''}`}>
+                    <button className="page-link" onClick={() => handlePageChange(i)}>
+                        {i}
+                    </button>
+                </li>
+            );
+        }
+        return pages;
+    };
+
 
     return (
         <>
@@ -173,8 +227,8 @@ const ManageCatagory = () => {
                                         <tbody>
                                             {categories.map((category, index) => (
                                                 <tr key={category._id} className='text-capitalize'>
-                                                    <td>{index + 1}</td>
-                                                    <td>{category.categoryName}</td>
+                                                    <td>{(currentPage - 1) * limit + index + 1}</td>
+                                                    <td className='text-capitalize'>{category.categoryName}</td>
                                                     <td><img src={category.image} alt="Category" width={70} /></td>
                                                     <td className='d-flex gap-2 justify-content-center'>
                                                         <button
@@ -198,11 +252,61 @@ const ManageCatagory = () => {
                                     </table>
                                 </div>
 
+                                <div className="d-flex justify-content-center mt-4">
+                                    {totalPages >= 1 && (
+                                        <nav aria-label="Category pagination">
+                                            <ul className="pagination">
+                                                <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                                                    <button
+                                                        className="page-link"
+                                                        onClick={() => handlePageChange(1)}
+                                                        disabled={currentPage === 1}
+                                                    >
+                                                        «
+                                                    </button>
+                                                </li>
+                                                <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                                                    <button
+                                                        className="page-link"
+                                                        onClick={() => handlePageChange(currentPage - 1)}
+                                                        disabled={currentPage === 1}
+                                                    >
+                                                        ‹
+                                                    </button>
+                                                </li>
+
+                                                {renderPaginationButtons()}
+
+                                                <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                                                    <button
+                                                        className="page-link"
+                                                        onClick={() => handlePageChange(currentPage + 1)}
+                                                        disabled={currentPage === totalPages}
+                                                    >
+                                                        ›
+                                                    </button>
+                                                </li>
+                                                <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                                                    <button
+                                                        className="page-link"
+                                                        onClick={() => handlePageChange(totalPages)}
+                                                        disabled={currentPage === totalPages}
+                                                    >
+                                                        »
+                                                    </button>
+                                                </li>
+                                            </ul>
+                                        </nav>
+                                    )}
+                                    {loading && <div className="text-center">Loading...</div>}
+                                </div>
+
                                 <div className="modal fade" id="exampleModal" tabIndex={-1} aria-labelledby="exampleModalLabel" aria-hidden="true">
                                     <div className="modal-dialog modal-dialog-centered">
                                         <EditCategory
                                             editcategory={editcategory}
-                                            fetchCategory={fetchCategory} // To refresh the list after updating
+                                            fetchCategory={fetchCategory}
+                                            currentPage={currentPage}
                                         />
                                     </div>
                                 </div>

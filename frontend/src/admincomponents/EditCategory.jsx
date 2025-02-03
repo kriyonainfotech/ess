@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
+import { Modal } from 'bootstrap';
 
 const backend_API = import.meta.env.VITE_API_URL;
 
-const EditCategory = ({ editcategory, fetchCategory }) => {
+const EditCategory = ({ editcategory, fetchCategory, currentPage }) => {
     const [categoryName, setCategoryName] = useState("");
     const [categoryImg, setCategoryImg] = useState("");
     const [preview, setPreview] = useState("");
@@ -14,66 +16,81 @@ const EditCategory = ({ editcategory, fetchCategory }) => {
 
     const handlefileChange = (e) => {
         const file = e.target.files[0];
-        console.log(file,"filea");
-        
+        console.log(file, "filea");
+
         if (file && file.type.startsWith('image/')) {
             setCategoryImg(file);
             const newPreview = URL.createObjectURL(file);
-            setPreview(newPreview);     
+            setPreview(newPreview);
             // Log the new image preview
             console.log("New image preview URL:", newPreview);
         } else {
             alert("Please select a valid image file.");
         }
     };
-    
-      
-const handleSubmit = async (e) => {
-    e.preventDefault();
 
-    if (!categoryName) {
-        alert("Please fill all fields");
-        return;
-    }
 
-    const formData = new FormData();
-    formData.append("categoryName", categoryName);
-    if (categoryImg) {
-        formData.append("category", categoryImg); // Append the new image if it exists
-    }
-    formData.append("categorId", editcategory._id);
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
-    try {
-        setLoading(true);
-
-        const response = await axios.post(`${backend_API}/category/updateCategory`, formData, {
-            headers: {
-                "Content-Type": "multipart/form-data",
-            },
-        });
-
-        if (response.data.success) {
-            alert("Category edited successfully!");
-            fetchCategory();
-
-            setCategoryName("");
-            setCategoryImg("");
-            setPreview("");
-            setError("");
-            const modalCloseButton = document.querySelector("[data-bs-dismiss='modal']");
-            if (modalCloseButton) modalCloseButton.click();
-
-        } else {
-            setError(response.data.message || "Failed to update category. Please try again.");
+        if (!categoryName) {
+            alert("Please fill all fields");
+            return;
         }
 
-    } catch (error) {
-        console.error("Error updating category:", error);
-        setError(error?.response?.data?.message || "Failed to update category. Please try again.");
-    } finally {
-        setLoading(false);
-    }
-};
+        const formData = new FormData();
+        formData.append("categoryName", categoryName);
+        if (categoryImg) {
+            formData.append("category", categoryImg);
+        }
+        formData.append("categorId", editcategory._id);
+
+        try {
+            setLoading(true);
+
+            const response = await axios.post(`${backend_API}/category/updateCategory`, formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+
+            if (response.status === 200) {
+                // Close modal using pure JavaScript
+                const modalElement = document.getElementById('exampleModal');
+                modalElement.classList.remove('show');
+                modalElement.setAttribute('aria-hidden', 'true');
+                modalElement.style.display = 'none';
+
+                // Remove modal backdrop
+                const modalBackdrops = document.getElementsByClassName('modal-backdrop');
+                while (modalBackdrops.length > 0) {
+                    modalBackdrops[0].parentNode.removeChild(modalBackdrops[0]);
+                }
+
+                // Remove modal open class from body
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+
+                toast.success("Category updated successfully");
+                fetchCategory(currentPage);
+
+                // Reset form
+                setCategoryName("");
+                setCategoryImg("");
+                setPreview("");
+                setError("");
+            } else {
+                setError(response.data.message || "Failed to update category. Please try again.");
+            }
+
+        } catch (error) {
+            console.error("Error updating category:", error);
+            setError(error?.response?.data?.message || "Failed to update category. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // useEffect(() => {
     //     return () => {
@@ -117,7 +134,7 @@ const handleSubmit = async (e) => {
                             id="file-upload"
                             name="categoryImg"
                             onChange={handlefileChange}
-                            
+
                         />
                         {preview && <img src={preview} alt="Preview" width="100" />}
                     </div>

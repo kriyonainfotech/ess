@@ -133,21 +133,52 @@ const getAllCategory = async (req, res) => {
     page = parseInt(page);
     limit = parseInt(limit);
 
+    // Get total count of categories
+    const totalCount = await Category.countDocuments({});
+
+    // Calculate skip value for pagination
+    const skip = (page - 1) * limit;
+
+    // Get paginated categories
     const categories = await Category.find({})
       .sort({ categoryName: 1 })
-      .skip((page - 1) * limit)
+      .skip(skip)
       .limit(limit);
+
+    // Calculate total pages
+    const totalPages = Math.ceil(totalCount / limit);
+
+    console.log(
+      {
+        page,
+        limit,
+        skip,
+        totalCount,
+        totalPages,
+        categoriesLength: categories.length,
+      },
+      "Pagination Debug"
+    );
 
     return res.status(200).json({
       success: true,
-      message: "Categories fetched successfully",
-      category: categories || [], // Ensure it's always an array
+      category: categories,
+      totalCount,
+      currentPage: page,
+      totalPages,
+      hasMore: page < totalPages,
     });
   } catch (error) {
     console.error("Error fetching categories:", error);
-    res
-      .status(500)
-      .json({ success: false, message: "Server error", category: [] }); // Always return an array
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      category: [],
+      totalCount: 0,
+      currentPage: 1,
+      totalPages: 1,
+      hasMore: false,
+    });
   }
 };
 module.exports = {

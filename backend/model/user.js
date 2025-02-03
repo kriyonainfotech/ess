@@ -77,6 +77,7 @@ const userSchema = new mongoose.Schema(
     },
     fcmToken: {
       type: String,
+      default: null,
     },
     isAdminApproved: { type: Boolean, default: false },
     userstatus: {

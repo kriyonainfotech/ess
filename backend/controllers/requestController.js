@@ -1,21 +1,139 @@
 const User = require("../model/user"); // Update the path as needed
 const mongoose = require("mongoose");
-const { sendNotification } = require("./sendController");
+const { sendNotification } = require("../config/firebase");
 
+// const sentRequest = async (req, res) => {
+//   try {
+//     const { receiverId } = req.body;
+//     const senderId = req.user.id;
+
+//     if (!receiverId || !senderId) {
+//       return res.status(400).send({
+//         success: false,
+//         message: "Sender or receiver ID is missing.",
+//       });
+//     }
+
+//     if (senderId.toString() === receiverId) {
+//       return res.status(400).send({
+//         success: false,
+//         message: "You cannot send a request to yourself.",
+//       });
+//     }
+
+//     const sender = await User.findById(senderId);
+//     const receiver = await User.findById(receiverId);
+
+//     if (!sender || !receiver) {
+//       return res.status(404).send({
+//         success: false,
+//         message: "Sender or receiver not found.",
+//       });
+//     }
+//     const existingSentRequest = sender.sended_requests.find(
+//       (req) => req.user.toString() === receiverId && req.status === "pending"
+//     );
+
+//     if (existingSentRequest) {
+//       return res.status(400).send({
+//         success: false,
+//         message: "Already send request.",
+//       });
+//     }
+
+//     // Check if a pending request already exists from receiver to sender
+//     const existingReceivedRequest = receiver.received_requests.find(
+//       (req) => req.user.toString() === senderId && req.status === "pending"
+//     );
+
+//     if (existingReceivedRequest) {
+//       return res.status(400).send({
+//         success: false,
+//         message: "Already send request.",
+//       });
+//     }
+
+//     await User.findByIdAndUpdate(senderId, {
+//       $addToSet: { sended_requests: { user: receiver, status: "pending" } },
+//     });
+
+//     await User.findByIdAndUpdate(receiverId, {
+//       $addToSet: { received_requests: { user: sender, status: "pending" } },
+//     });
+//     // console.log(receiver._id,"seder token");
+
+//     const Notification = {
+//       senderName: sender.name,
+//       fcmToken: receiver.fcmToken,
+//       title: "New work",
+//       message: `${sender.name} has sent you a request.`,
+//       receiverId: receiver._id, // Include the receiver's ID to store the notification
+//     };
+//     // console.log(Notification,"notif" );
+
+//     await sendNotification(Notification);
+
+//     const updatedSender = await User.findById(senderId).populate(
+//       "sended_requests.user"
+//     );
+//     const updatedReceiver = await User.findById(receiverId).populate(
+//       "received_requests.user"
+//     );
+
+//     return res.status(200).send({
+//       success: true,
+//       message: "Request sent successfully.",
+//       sender: updatedSender,
+//       receiver: updatedReceiver,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).send({
+//       success: false,
+//       message: "An error occurred during the request.",
+//       error: error.message,
+//     });
+//   }
+// };
+
+// Function to send FCM Notification
+const sendNotification = async ({ fcmToken, title, message }) => {
+  if (!fcmToken) {
+    console.error("FCM token is missing. Notification not sent.");
+    return;
+  }
+
+  const payload = {
+    token: fcmToken,
+    notification: {
+      title,
+      body: message,
+    },
+    data: { click_action: "FLUTTER_NOTIFICATION_CLICK" }, // Optional custom data
+  };
+
+  try {
+    await admin.messaging().send(payload);
+    console.log("Notification sent successfully:", title);
+  } catch (error) {
+    console.error("Error sending notification:", error);
+  }
+};
+
+// Send Request Function
 const sentRequest = async (req, res) => {
   try {
     const { receiverId } = req.body;
     const senderId = req.user.id;
 
     if (!receiverId || !senderId) {
-      return res.status(400).send({
-        success: false,
-        message: "Sender or receiver ID is missing.",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Sender or receiver ID is missing." });
     }
 
     if (senderId.toString() === receiverId) {
-      return res.status(400).send({
+      return res.status(400).json({
         success: false,
         message: "You cannot send a request to yourself.",
       });
@@ -25,53 +143,43 @@ const sentRequest = async (req, res) => {
     const receiver = await User.findById(receiverId);
 
     if (!sender || !receiver) {
-      return res.status(404).send({
-        success: false,
-        message: "Sender or receiver not found.",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "Sender or receiver not found." });
     }
+
+    // Check if a pending request already exists
     const existingSentRequest = sender.sended_requests.find(
       (req) => req.user.toString() === receiverId && req.status === "pending"
     );
-
-    if (existingSentRequest) {
-      return res.status(400).send({
-        success: false,
-        message: "Already send request.",
-      });
-    }
-
-    // Check if a pending request already exists from receiver to sender
     const existingReceivedRequest = receiver.received_requests.find(
       (req) => req.user.toString() === senderId && req.status === "pending"
     );
 
-    if (existingReceivedRequest) {
-      return res.status(400).send({
-        success: false,
-        message: "Already send request.",
-      });
+    if (existingSentRequest || existingReceivedRequest) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Request already sent." });
     }
 
+    // Update sender and receiver requests
     await User.findByIdAndUpdate(senderId, {
       $addToSet: { sended_requests: { user: receiver, status: "pending" } },
     });
-
     await User.findByIdAndUpdate(receiverId, {
       $addToSet: { received_requests: { user: sender, status: "pending" } },
     });
-    // console.log(receiver._id,"seder token");
 
-    const Notification = {
-      senderName: sender.name,
-      fcmToken: receiver.fcmToken,
-      title: "New work",
-      message: `${sender.name} has sent you a request.`,
-      receiverId: receiver._id, // Include the receiver's ID to store the notification
-    };
-    // console.log(Notification,"notif" );
-
-    await sendNotification(Notification);
+    // Send FCM Notification
+    if (receiver.fcmToken) {
+      await sendNotification({
+        fcmToken: receiver.fcmToken,
+        title: "New Work Request",
+        message: `${sender.name} has sent you a request.`,
+      });
+    } else {
+      console.warn("Receiver does not have an FCM token.");
+    }
 
     const updatedSender = await User.findById(senderId).populate(
       "sended_requests.user"
@@ -80,7 +188,7 @@ const sentRequest = async (req, res) => {
       "received_requests.user"
     );
 
-    return res.status(200).send({
+    return res.status(200).json({
       success: true,
       message: "Request sent successfully.",
       sender: updatedSender,
@@ -88,7 +196,7 @@ const sentRequest = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).send({
+    return res.status(500).json({
       success: false,
       message: "An error occurred during the request.",
       error: error.message,
@@ -181,6 +289,17 @@ const sentRequestMobile = async (req, res) => {
   }
 };
 
+// const sendRequestNotification = async (userId, title, message) => {
+//   try {
+//     const user = await User.findById(userId);
+//     if (user && user.fcmToken) {
+//       await sendNotification(user.fcmToken, title, message);
+//     }
+//   } catch (error) {
+//     console.error("Error sending notification:", error);
+//   }
+// };
+
 const receivedRequest = async (req, res) => {
   try {
     const { senderId } = req.body;
@@ -233,29 +352,16 @@ const receivedRequest = async (req, res) => {
       });
     }
 
-    // // Send notification to the sender that their request was received
-    // await sendNotification({
-    //   senderName: receiver.name,
-    //   fcmToken: sender.fcmToken,
-    //   title: 'Request Received',
-    //   message: `${receiver.name} has received your request.`,
-    // });
-
-    // const Notification = {
-    //   senderName: receiver.name,
-    //   fcmToken: sender.fcmToken,
-    //   title: "New Work",
-    //   message: `${receiver.name} has received your request.`,
-    //   receiverId: sender._id, // Include the receiver's ID to store the notification
-    // };
-    // console.log(Notification,"notif" );
-
-    // await sendNotification(Notification);
+    // Send notification to sender
+    await sendRequestNotification(
+      senderId,
+      "Request Received",
+      `${receiver.name} has received your request`
+    );
 
     return res.status(200).send({
       success: true,
-      message:
-        "Request received Successfully.",
+      message: "Request received Successfully.",
     });
   } catch (error) {
     console.error(error);
@@ -414,28 +520,22 @@ const cancelRequest = async (req, res) => {
       });
     }
 
-    // Send notification to both sender and receiver that the request is canceled
+    // Send notification to both parties
+    await sendRequestNotification(
+      senderId,
+      "Request Cancelled",
+      `Your request with ${receiver.name} has been cancelled`
+    );
 
-    // Send notification about the cancellation to both sender and receiver
-    // await sendNotification({
-    //   senderName: sender.name,
-    //   fcmToken: receiver.fcmToken,
-    //   title: "Request Canceled",
-    //   message: `${sender.name} has canceled the request.`,
-    //   receiverId: receiver._id, // Include the receiver's ID for storing notifications in the receiver's profile
-    // });
-
-    // await sendNotification({
-    //   senderName: receiver.name,
-    //   fcmToken: sender.fcmToken,
-    //   title: "Request Canceled",
-    //   message: `${receiver.name} has canceled the request.`,
-    //   receiverId: sender._id, // Include the sender's ID for storing notifications in the sender's profile
-    // });
+    await sendRequestNotification(
+      receiverId,
+      "Request Cancelled",
+      `Request from ${sender.name} has been cancelled`
+    );
 
     return res.status(200).send({
       success: true,
-      message: "Request status updated to 'canceled' and removed successfully.",
+      message: "Request cancelled successfully",
     });
   } catch (error) {
     console.error("Error during request cancellation:", error);
@@ -546,7 +646,6 @@ const cancelRequestMobile = async (req, res) => {
     });
   }
 };
-
 
 const updateUserAverageRating = async (userId, newRating) => {
   const user = await User.findById(userId);
@@ -672,25 +771,22 @@ const workDone = async (req, res) => {
     await updateUserAverageRating(receiverId, rating); // Update receiver's userAverageRating
     await updateProviderAverageRating(senderId, rating); // Update sender's providerAverageRating
 
-    // // Notify both users about the work being done
-    // await sendNotification({
-    //   senderName: receiver.name,
-    //   fcmToken: sender.fcmToken,
-    //   title: "Work Done",
-    //   message: `${receiver.name} has completed the work.`,
-    // });
+    // Send notification to both parties
+    await sendRequestNotification(
+      senderId,
+      "Work Completed",
+      `Work with ${receiver.name} has been marked as complete`
+    );
 
-    // await sendNotification({
-    //   senderName: sender.name,
-    //   fcmToken: receiver.fcmToken,
-    //   title: "Work Done",
-    //   message: `${sender.name} has completed the work.`,
-    // });
+    await sendRequestNotification(
+      receiverId,
+      "Work Completed",
+      `Work with ${sender.name} has been marked as complete`
+    );
 
     return res.status(200).send({
       success: true,
-      message:
-        "Work marked as done, rating submitted, and averages updated successfully.",
+      message: "Work marked as done successfully",
     });
   } catch (error) {
     console.error("Error during workDone operation:", error);
@@ -938,6 +1034,49 @@ const deleteRequest = async (req, res) => {
   }
 };
 
+const updateRequestStatus = async (req, res) => {
+  try {
+    const { requestId, status } = req.body;
+
+    // Update request status
+    const request = await Request.findByIdAndUpdate(
+      requestId,
+      { status },
+      { new: true }
+    ).populate("userId");
+
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: "Request not found",
+      });
+    }
+
+    // Send notification if user has FCM token
+    if (request.userId.fcmToken) {
+      const title = "Request Update";
+      const body =
+        status === "approved"
+          ? "Your request has been approved!"
+          : "Your request has been cancelled.";
+
+      await sendNotification(request.userId.fcmToken, title, body);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Request ${status} successfully`,
+      request,
+    });
+  } catch (error) {
+    console.error("Error updating request:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating request",
+    });
+  }
+};
+
 module.exports = {
   sentRequest,
   sentRequestMobile,
@@ -951,4 +1090,5 @@ module.exports = {
   receivedRequestMobile,
   cancelRequestMobile,
   workDoneMobile,
+  updateRequestStatus,
 };

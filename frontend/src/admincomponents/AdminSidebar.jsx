@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { FaApper, FaAppStore, FaAppStoreIos, FaCalendar, FaDatabase, FaSortAmountDown, FaSuperpowers, FaUser } from 'react-icons/fa'
+import { FaApper, FaUsers, FaAppStoreIos, FaCalendar, FaDatabase, FaSortAmountDown, FaSuperpowers, FaUser } from 'react-icons/fa'
+import { MdOutlinePendingActions, MdDashboard, MdCategory, MdAdminPanelSettings, MdOutlineSupportAgent } from "react-icons/md";
 import { Link, useNavigate } from 'react-router-dom'
 import logo from "../../public/ess-121.png"
 import '../AdminCss/dashboard.css'
@@ -11,47 +12,48 @@ const AdminSidebar = () => {
     {
       id: 1,
       title: 'Dashboard',
-      icon: <FaSortAmountDown />,
+      icon: <MdDashboard />,
       path: '/admin',
-    },
-    
-    {
-      id: 2,
-      title: 'CreateUser',
-      icon: <FaSortAmountDown />,
-      path: '/admin/creatUser',
     },
 
     {
       id: 2,
-      title: 'Panding Approval',
-      icon: <FaAppStoreIos />,
+      title: 'Create User',
+      icon: <FaUser />,
+      path: '/admin/creatUser',
+    },
+
+    {
+      id: 3,
+      title: 'Pending Approval',
+      icon: <MdOutlinePendingActions />,
       path: '/admin/aprove',
     },
     {
-      id: 3,
-      title: 'AllUsers',
-      icon: <FaUser />,
+      id: 4,
+      title: 'All Users',
+      icon: <FaUsers />,
       path: '/admin/users',
     },
     {
       id: 3,
       title: 'Manage Category',
-      icon: <FaCalendar />,
+      icon: <MdCategory />
+      ,
       path: '/admin/manageCategory',
     },
 
     {
       id: 4,
       title: 'Manage Admin',
-      icon: <FaDatabase />,
+      icon: <MdAdminPanelSettings />,
       path: '/admin/manageAdmin',
     },
 
     {
       id: 5,
       title: 'Support',
-      icon: <FaSuperpowers />,
+      icon: <MdOutlineSupportAgent />,
       path: '/admin/support',
     },
 
@@ -61,8 +63,8 @@ const AdminSidebar = () => {
 
   return (
     <>
-     <div className="offcanvas offcanvas-start" data-bs-scroll="true" data-bs-backdrop="false" tabIndex="-1" id="offcanvasScrolling" aria-labelledby="offcanvasScrollingLabel">
-     {/* <div className="offcanvas bg-white offcanvas-start" tabIndex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel"> */}
+      <div className="offcanvas offcanvas-start" data-bs-scroll="true" data-bs-backdrop="false" tabIndex="-1" id="offcanvasScrolling" aria-labelledby="offcanvasScrollingLabel">
+        {/* <div className="offcanvas bg-white offcanvas-start" tabIndex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel"> */}
         <div className="d-flex w-100 align-items-center p-3">
 
           <div className='w-100 d-flex align-items-center justify-content-center '>

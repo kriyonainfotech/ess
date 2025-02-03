@@ -14,6 +14,7 @@ import Footer from '../components/Footer';
 import "../assets/Veryfymodal.css"
 import { toast } from 'react-toastify';
 const backend_API = import.meta.env.VITE_API_URL;
+import { FCMContext } from '../context/FCMContext';
 const KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID;
 // console.log(KEY_ID);
 const Home = () => {
@@ -30,12 +31,19 @@ const Home = () => {
 
 
   // Get FCM Token on mount
+  // useEffect(() => {
+  //   getFcmToken();
+  //   onMessage(messaging, (payload) => {
+  //     console.log(payload);
+  //   });
+  // }, []);
+  const { fcmToken } = useContext(FCMContext);
+
   useEffect(() => {
-    getFcmToken();
-    onMessage(messaging, (payload) => {
-      console.log(payload);
-    });
-  }, []);
+    if (fcmToken) {
+      console.log("FCM Token:", fcmToken);
+    }
+  }, [fcmToken]);
 
   // Fetch Categories from backend
   const fetchCategories = async () => {
