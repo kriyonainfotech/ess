@@ -2,7 +2,7 @@ import React, { useState, useContext, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Webcam from "react-webcam";
 import { UserContext } from "../UserContext";
-import { FCMContext } from "../context/FCMContext";
+import { FCMContext } from "../../src/context/FCMContext";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { FiCamera } from "react-icons/fi";
