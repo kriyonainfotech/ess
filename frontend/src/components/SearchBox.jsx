@@ -1,15 +1,15 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import { toast } from 'react-toastify';
 const backend_API = import.meta.env.VITE_API_URL;
 
 const SearchBox = () => {
   const [search, setSearch] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [categories, setCategories] = useState([]);
-  
-const [loading, setLoading] = useState(false);
+
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const fetchCategory = async () => {
