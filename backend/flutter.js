@@ -16,18 +16,7 @@ app.use(bodyParser.urlencoded({ extended: true })); // Change `true` or `false` 
 app.use(bodyParser.json());
 
 const cors = require("cors");
-const corsOptions = {
-  origin: "*", // Or specify your Flutter app origins
-  allowedHeaders: ["Content-Type", "Authorization"],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  credentials: true,
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
-  maxAge: 86400, // 24 hours
-};
-
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.json());
