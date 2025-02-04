@@ -293,7 +293,7 @@ const Senedrequest = ({ sendedRequest }) => {
                                             <div className="max-w-md mx-auto">
                                                 <i className="fas fa-inbox text-4xl text-gray-400 mb-4"></i>
                                                 <h3 className="text-xl font-medium text-gray-600 mb-2">
-                                                    No Requests Found
+                                                    No Requests Found for you
                                                 </h3>
                                                 <p className="text-gray-500">
                                                     Your sent requests will appear here once you make them

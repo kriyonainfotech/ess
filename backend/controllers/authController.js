@@ -9,7 +9,11 @@ const { distributeReferralRewards } = require("../services/referralService");
 const { sendNotification } = require("./sendController");
 
 const registerUser = async (req, res) => {
+  const startTime = Date.now();
+  console.log(`[${new Date().toISOString()}] Starting registerUser request`);
+
   try {
+    console.log("Request body:", req.body);
     const {
       name,
       email,
@@ -22,6 +26,11 @@ const registerUser = async (req, res) => {
       businessAddress,
     } = req.body;
 
+    // Log time taken for request parsing
+    console.log(`Request parsing took: ${Date.now() - startTime}ms`);
+
+    // Validation check timing
+    const validationStart = Date.now();
     if (
       !name ||
       !email ||
@@ -30,6 +39,7 @@ const registerUser = async (req, res) => {
       !phone ||
       !address
     ) {
+      console.log("Validation failed - missing fields");
       return res.status(400).send({
         success: false,
         message: "Please fill all the fields",
@@ -37,43 +47,76 @@ const registerUser = async (req, res) => {
     }
 
     if (password !== confirmpassword) {
+      console.log("Validation failed - password mismatch");
       return res.status(400).send({
         success: false,
         message: "Password and Confirm Password don't match",
       });
     }
+    console.log(`Validation checks took: ${Date.now() - validationStart}ms`);
 
-    const userExist = await UserModel.findOne({ email: email });
+    // Database check timing
+    const dbCheckStart = Date.now();
+    const userExist = await UserModel.findOne({ email: email }).lean();
+    console.log(`Database check took: ${Date.now() - dbCheckStart}ms`);
+
     if (userExist) {
+      console.log("User already exists:", email);
       return res.status(400).send({
         success: false,
         message: "Email already exists",
       });
     }
+
+    // Password hashing timing
+    const hashStart = Date.now();
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
+    console.log(`Password hashing took: ${Date.now() - hashStart}ms`);
+
+    // User creation timing
+    const createStart = Date.now();
     const user = new UserModel({
       name,
       email,
-      password: hashedPassword, // Store hashed password
+      password: hashedPassword,
       phone,
       address,
       businessCategory,
       businessName,
       businessAddress,
     });
+
+    // Save timing
+    const saveStart = Date.now();
     await user.save();
+    console.log(`Database save took: ${Date.now() - saveStart}ms`);
+
+    const totalTime = Date.now() - startTime;
+    console.log(`Total registration time: ${totalTime}ms`);
 
     return res.status(200).send({
       success: true,
       message: "User registered successfully",
       user: user,
+      timing: {
+        total: totalTime,
+        validation: Date.now() - validationStart,
+        dbCheck: Date.now() - dbCheckStart,
+        hashing: Date.now() - hashStart,
+        saving: Date.now() - saveStart,
+      },
     });
   } catch (error) {
+    const errorTime = Date.now() - startTime;
+    console.error(`Error after ${errorTime}ms:`, error);
     return res.status(500).send({
       success: false,
       message: "An error occurred during registration",
       error: error.message,
+      timing: {
+        errorOccurredAfter: errorTime,
+      },
     });
   }
 };
@@ -400,25 +443,50 @@ const loginUser = async (req, res) => {
 //       message: "An error occurred during registration",
 //       error: error.message,
 //     });
-//   }
-// };
+//   };
 
 const registerUserweb = async (req, res) => {
-  try {
-    console.log("[INFO] Register API called", req.body);
+  const startTime = Date.now();
+  console.log(
+    "[INFO] Register API called - Start time:",
+    new Date().toISOString()
+  );
 
+  try {
+    // Set a timeout for the entire request
+    const requestTimeout = setTimeout(() => {
+      if (!res.headersSent) {
+        console.log("[ERROR] Request timeout reached after 30s");
+        return res.status(504).json({
+          success: false,
+          message: "Request timed out. Please try again.",
+          timeoutAfter: Date.now() - startTime,
+        });
+      }
+    }, 30000); // 30 second timeout
+
+    // File validation with timing
+    const fileCheckStart = Date.now();
     if (
       !req.files ||
       !req.files.frontAadhar ||
       !req.files.backAadhar ||
       !req.files.profilePic
     ) {
-      console.log("[ERROR] Missing required files", req.files);
+      clearTimeout(requestTimeout);
+      console.log("[ERROR] Missing required files", {
+        timeElapsed: Date.now() - startTime,
+        files: req.files,
+      });
       return res
         .status(400)
         .send({ message: "Please upload all required files." });
     }
+    console.log(
+      `[INFO] File validation took: ${Date.now() - fileCheckStart}ms`
+    );
 
+    // File size validation
     const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
     const files = req.files;
     if (
@@ -426,21 +494,19 @@ const registerUserweb = async (req, res) => {
       files.backAadhar[0].size > MAX_FILE_SIZE ||
       files.profilePic[0].size > MAX_FILE_SIZE
     ) {
-      console.log("[ERROR] File size exceeds 2MB", files);
+      clearTimeout(requestTimeout);
+      console.log("[ERROR] File size exceeds limit");
       return res
         .status(400)
         .json({ message: "File size must be less than 2MB" });
     }
 
+    // Get file URLs
     const frontAadharUrl = files.frontAadhar[0].path;
     const backAadharUrl = files.backAadhar[0].path;
     const profilePicUrl = files.profilePic[0].path;
-    console.log("[INFO] Uploaded file URLs", {
-      frontAadharUrl,
-      backAadharUrl,
-      profilePicUrl,
-    });
 
+    // Extract and validate user data
     const {
       name,
       email,
@@ -454,26 +520,26 @@ const registerUserweb = async (req, res) => {
       businessDetaile,
       fcmToken,
     } = req.body;
-    if (!address) {
-      console.log("[ERROR] Address is missing");
-      return res
-        .status(400)
-        .send({ success: false, message: "Address is required." });
-    }
 
+    // Address parsing with error handling
     let parsedAddress;
     try {
-      parsedAddress = JSON.parse(address);
+      parsedAddress =
+        typeof address === "string" ? JSON.parse(address) : address;
     } catch (err) {
-      console.log("[ERROR] Invalid address format", err);
-      return res
-        .status(400)
-        .send({ success: false, message: "Invalid address format." });
+      clearTimeout(requestTimeout);
+      console.log("[ERROR] Address parsing failed:", err);
+      return res.status(400).send({
+        success: false,
+        message: "Invalid address format.",
+        error: err.message,
+      });
     }
 
     const { area, city, state, country, pincode } = parsedAddress;
-    console.log("[INFO] Parsed Address", parsedAddress);
 
+    // Validation checks
+    const validationStart = Date.now();
     if (
       !name ||
       !email ||
@@ -486,64 +552,46 @@ const registerUserweb = async (req, res) => {
       !country ||
       !pincode
     ) {
-      console.log("[ERROR] Missing required fields", req.body);
-      return res
-        .status(400)
-        .send({ success: false, message: "Please fill all the fields" });
-    }
-
-    if (password !== confirmpassword) {
-      console.log("[ERROR] Passwords do not match");
+      clearTimeout(requestTimeout);
+      console.log("[ERROR] Missing required fields");
       return res.status(400).send({
         success: false,
-        message: "Password and Confirm Password don't match",
+        message: "Please fill all the fields",
       });
     }
+    console.log(`[INFO] Validation took: ${Date.now() - validationStart}ms`);
 
-    const userExist = await UserModel.findOne({ phone });
+    // Database operations with timing
+    const dbStart = Date.now();
+    const [userExist, emailExist] = await Promise.all([
+      UserModel.findOne({ phone }).select("phone").lean(),
+      UserModel.findOne({ email }).select("email").lean(),
+    ]);
+
     if (userExist) {
-      console.log("[ERROR] Phone number already exists", phone);
-      return res
-        .status(400)
-        .send({ success: false, message: "Number already exists" });
-    }
-
-    const emailExist = await UserModel.findOne({ email });
-    if (emailExist) {
-      console.log("[ERROR] Email already exists", email);
-      return res
-        .status(400)
-        .send({ success: false, message: "Email already exists" });
-    }
-
-    const updatedCounterDoc = await mongoose.connection.db
-      .collection("counters")
-      .findOneAndUpdate(
-        { _id: "userId" },
-        { $inc: { seq: 1 } },
-        { returnDocument: "after" }
-      );
-
-    if (!updatedCounterDoc) {
-      return res.status(500).send({
+      clearTimeout(requestTimeout);
+      return res.status(400).send({
         success: false,
-        message: "Failed to retrieve or increment counter",
+        message: "Number already exists",
       });
     }
 
-    const uniqueId = updatedCounterDoc.seq.toString().padStart(3, "0");
-    console.log("[INFO] Generated User ID", uniqueId);
-
-    let referrer = null;
-    if (req.body.referralCode) {
-      referrer = await UserModel.findOne({ phone: req.body.referralCode });
-      console.log("[INFO] Referrer found", referrer);
+    if (emailExist) {
+      clearTimeout(requestTimeout);
+      return res.status(400).send({
+        success: false,
+        message: "Email already exists",
+      });
     }
+    console.log(`[INFO] Database checks took: ${Date.now() - dbStart}ms`);
 
+    // Generate unique ID
+    const uniqueId = await generateUniqueId();
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.log("[INFO] Password hashed");
-
     const newReferralCode = uuidv4();
+
+    // Create and save user
+    const saveStart = Date.now();
     const user = new UserModel({
       userId: uniqueId,
       name,
@@ -557,7 +605,6 @@ const registerUserweb = async (req, res) => {
       businessDetaile,
       fcmToken,
       referralCode: newReferralCode,
-      referredBy: referrer ? [referrer._id] : [],
       isAdminApproved: false,
       walletBalance: 0,
       frontAadhar: frontAadharUrl,
@@ -566,26 +613,19 @@ const registerUserweb = async (req, res) => {
     });
 
     await user.save();
-    console.log("[INFO] User saved successfully", user._id);
+    console.log(`[INFO] User save took: ${Date.now() - saveStart}ms`);
 
-    if (referrer) {
-      await distributeReferralRewards(referrer._id, 20, user._id);
-      console.log("[INFO] Referral rewards distributed");
-    }
-
+    // Generate token and send response
     const token = jwt.sign(
       { id: user._id, isAdminApproved: false },
       process.env.JWT_SECRET,
       { expiresIn: "24h" }
     );
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "None",
-      maxAge: 3600000,
-    });
 
-    console.log("[INFO] User registered successfully", user._id);
+    clearTimeout(requestTimeout);
+    const totalTime = Date.now() - startTime;
+    console.log(`[INFO] Total registration time: ${totalTime}ms`);
+
     return res.status(200).send({
       success: true,
       message: "User registered successfully, awaiting admin approval",
@@ -596,16 +636,36 @@ const registerUserweb = async (req, res) => {
         referralCode: newReferralCode,
       },
       token,
+      timing: {
+        total: totalTime,
+      },
     });
   } catch (error) {
-    console.log("[ERROR] Registration failed", error);
+    console.log("[ERROR] Registration failed:", error);
+    const errorTime = Date.now() - startTime;
+
     return res.status(500).send({
       success: false,
       message: "An error occurred during registration",
       error: error.message,
+      timing: {
+        errorOccurredAfter: errorTime,
+      },
     });
   }
 };
+
+// Helper function to generate unique ID
+async function generateUniqueId() {
+  const counterDoc = await mongoose.connection.db
+    .collection("counters")
+    .findOneAndUpdate(
+      { _id: "userId" },
+      { $inc: { seq: 1 } },
+      { returnDocument: "after", upsert: true }
+    );
+  return counterDoc.seq.toString().padStart(3, "0");
+}
 
 const updateUsersPaymentVerified = async (req, res) => {
   try {
@@ -1567,7 +1627,6 @@ module.exports = {
   registerUser,
   loginUser,
   registerUserweb,
-  registerUserweb,
   loginUserweb,
   getalluser,
   getUser,
@@ -1588,4 +1647,5 @@ module.exports = {
   setReferral,
   updateUsersPaymentVerified,
   getrequests,
+  updateReferralChain,
 };

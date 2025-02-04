@@ -8,12 +8,14 @@ const {
   updateCategory,
   deleteCategory,
   getAllCategory,
+  getUsersByCategory,
 } = require("../controllers/categoryController");
+const { getUsersByBCategory } = require("../controllers/AuthController2");
 
 cloudinary.config({
   cloud_name: "dcfm0aowt",
   api_key: "576798684156725",
-  api_secret: "bhhXx57-OdaxvDdZOwaUKNvBXOA"
+  api_secret: "bhhXx57-OdaxvDdZOwaUKNvBXOA",
 });
 
 const storage = new CloudinaryStorage({
@@ -35,4 +37,5 @@ router.post("/addCategory", upload.single("category"), addCategory);
 router.post("/updateCategory", upload.single("category"), updateCategory);
 router.delete("/deleteCategory", deleteCategory);
 router.get("/getAllCategory", getAllCategory);
+// router.get("/getUsersByCategory", getUsersByBCategory);
 module.exports = router;

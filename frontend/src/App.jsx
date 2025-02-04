@@ -56,56 +56,58 @@ export default function App() {
   }
 
   return (
-    <UserProvider>
-      <ToastContainer />
-      <FCMProvider>
-        <Suspense fallback={
-          <>
-            <Loader />
-          </>
-        }>
-          <Router>
-            <Routes>
-              <Route path="/register" element={<Registration />} />
-              <Route path="/registernext" element={<RegisterNextPage />} />
-              <Route path="/RegisterAadhar" element={<RegisterAadhar />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/forgotPassword" element={<ForgotPassword />} />
-              <Route path="/verifyOtp" element={<VerifyOtp />} />
-              <Route path="/resetPassword" element={<ResetPassword />} />
-              {/* Protected Routes */}
-              <Route element={<ProtectedRoute />}>
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/editprofile" element={<EditProfile />} />
-                <Route path="/serviceDetail" element={<ServiceDetail />} />
-                <Route path="/work" element={<Work />} />
-                <Route path="/support" element={<Support />} />
-                <Route path="/wallete" element={<Wallete />} />
-                <Route path="/team" element={<Team />} />
+    <>
+      <UserProvider>
+        <ToastContainer />
+        <FCMProvider>
+          <Suspense fallback={
+            <>
+              <Loader />
+            </>
+          }>
+            <Router>
+              <Routes>
+                <Route path="/register" element={<Registration />} />
+                <Route path="/registernext" element={<RegisterNextPage />} />
+                <Route path="/RegisterAadhar" element={<RegisterAadhar />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/forgotPassword" element={<ForgotPassword />} />
+                <Route path="/verifyOtp" element={<VerifyOtp />} />
+                <Route path="/resetPassword" element={<ResetPassword />} />
+                {/* Protected Routes */}
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/editprofile" element={<EditProfile />} />
+                  <Route path="/serviceDetail" element={<ServiceDetail />} />
+                  <Route path="/work" element={<Work />} />
+                  <Route path="/support" element={<Support />} />
+                  <Route path="/wallete" element={<Wallete />} />
+                  <Route path="/team" element={<Team />} />
 
-                <Route path="/ViewTickits" element={<SupportTicket />} />
-              </Route>
-              <Route path="/" element={<Home />} />
-              <Route path="/servises" element={<Services />} />
-              <Route path="/privacyPolicy" element={<PrivacyPolicy />} />
-              <Route path="/aboutus" element={<AboutUs />} />
-              <Route path="/work/sendrequest" element={<Senedrequest />} />
+                  <Route path="/ViewTickits" element={<SupportTicket />} />
+                </Route>
+                <Route path="/" element={<Home />} />
+                <Route path="/servises" element={<Services />} />
+                <Route path="/privacyPolicy" element={<PrivacyPolicy />} />
+                <Route path="/aboutus" element={<AboutUs />} />
+                <Route path="/work/sendrequest" element={<Senedrequest />} />
 
-              {/* Admin Routes */}
-              <Route path="/admin" element={<ProtectAdmin><Dashboard /></ProtectAdmin>} />
-              <Route path="/admin/users" element={<ProtectAdmin><AllUsers /></ProtectAdmin>} />
-              <Route path="/admin/editUser" element={<ProtectAdmin><EditUser /></ProtectAdmin>} />
-              <Route path="/admin/manageAdmin" element={<ProtectAdmin><ManageAdmin /></ProtectAdmin>} />
-              <Route path="/admin/assignRefferal" element={<ProtectAdmin><AssignReferrals /></ProtectAdmin>} />
-              <Route path="/admin/manageCategory" element={<ProtectAdmin><ManageCatagory /></ProtectAdmin>} />
-              <Route path="/admin/aprove" element={<ProtectAdmin><AproveRegister /></ProtectAdmin>} />
-              <Route path="/admin/support" element={<ProtectAdmin><SupportPage /></ProtectAdmin>} />
-              <Route path="/admin/creatUser" element={<ProtectAdmin><CreatUser /></ProtectAdmin>} />
-            </Routes>
-          </Router>
-        </Suspense>
-      </FCMProvider>
-      <Notification />
-    </UserProvider>
+                {/* Admin Routes */}
+                <Route path="/admin" element={<ProtectAdmin><Dashboard /></ProtectAdmin>} />
+                <Route path="/admin/users" element={<ProtectAdmin><AllUsers /></ProtectAdmin>} />
+                <Route path="/admin/editUser" element={<ProtectAdmin><EditUser /></ProtectAdmin>} />
+                <Route path="/admin/manageAdmin" element={<ProtectAdmin><ManageAdmin /></ProtectAdmin>} />
+                <Route path="/admin/assignRefferal" element={<ProtectAdmin><AssignReferrals /></ProtectAdmin>} />
+                <Route path="/admin/manageCategory" element={<ProtectAdmin><ManageCatagory /></ProtectAdmin>} />
+                <Route path="/admin/aprove" element={<ProtectAdmin><AproveRegister /></ProtectAdmin>} />
+                <Route path="/admin/support" element={<ProtectAdmin><SupportPage /></ProtectAdmin>} />
+                <Route path="/admin/creatUser" element={<ProtectAdmin><CreatUser /></ProtectAdmin>} />
+              </Routes>
+            </Router>
+          </Suspense>
+        </FCMProvider>
+        <Notification />
+      </UserProvider>
+    </>
   );
 }

@@ -4,8 +4,8 @@ dotenv.config();
 const express = require("express");
 const app = express();
 const connectDB = require("./config/db");
-const port = process.env.PORT || 3000;
-const serverType = "Web Backend";
+const port = process.env.FLUTTER_PORT || 4000; // Use environment variable or default to 4000
+const serverType = "Flutter Backend";
 connectDB();
 const cookieParser = require("cookie-parser");
 
@@ -17,12 +17,7 @@ app.use(bodyParser.json());
 
 const cors = require("cors");
 const corsOptions = {
-  origin: [
-    "https://ess-frontend-xi.vercel.app",
-    "https://ees121.com",
-    "https://www.ees121.com",
-    "http://localhost:5173",
-  ],
+  origin: "*", // Or specify your Flutter app origins
   allowedHeaders: ["Content-Type", "Authorization"],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true,
@@ -32,25 +27,37 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
-// Add OPTIONS handling for preflight requests
 app.options("*", cors(corsOptions));
-
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded());
+
+// Health check route
 app.get("/", (req, res) => {
   res.json({
     status: "ok",
-    server: "Web Backend",
-    message: "Web backend server is running",
+    server: "Flutter Backend",
+    message: "Flutter backend server is running",
     port: port,
     environment: process.env.NODE_ENV || "development",
   });
 });
+
+// Routes
 app.use("/", require("./routes/indexRoute"));
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    success: false,
+    message: "Something went wrong!",
+    error: process.env.NODE_ENV === "development" ? err.message : undefined,
+  });
+});
+
+// Start server
 app.listen(port, (err) => {
   if (err) {
     console.error(`[${serverType}] Error starting server:`, err);

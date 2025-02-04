@@ -275,7 +275,7 @@ const ServiceDetail = () => {
           withCredentials: true,
         }
       );
-      console.log(response, 'cu')
+      console.log(response, 'categoies')
       if (response.data.success) {
         setService(response.data.users);
         setApiMessage(response.data.message); // ✅ Store API message

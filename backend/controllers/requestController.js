@@ -2,138 +2,20 @@ const User = require("../model/user"); // Update the path as needed
 const mongoose = require("mongoose");
 // const { sendNotification } = require("../config/firebase");
 
-// const sentRequest = async (req, res) => {
-//   try {
-//     const { receiverId } = req.body;
-//     const senderId = req.user.id;
-
-//     if (!receiverId || !senderId) {
-//       return res.status(400).send({
-//         success: false,
-//         message: "Sender or receiver ID is missing.",
-//       });
-//     }
-
-//     if (senderId.toString() === receiverId) {
-//       return res.status(400).send({
-//         success: false,
-//         message: "You cannot send a request to yourself.",
-//       });
-//     }
-
-//     const sender = await User.findById(senderId);
-//     const receiver = await User.findById(receiverId);
-
-//     if (!sender || !receiver) {
-//       return res.status(404).send({
-//         success: false,
-//         message: "Sender or receiver not found.",
-//       });
-//     }
-//     const existingSentRequest = sender.sended_requests.find(
-//       (req) => req.user.toString() === receiverId && req.status === "pending"
-//     );
-
-//     if (existingSentRequest) {
-//       return res.status(400).send({
-//         success: false,
-//         message: "Already send request.",
-//       });
-//     }
-
-//     // Check if a pending request already exists from receiver to sender
-//     const existingReceivedRequest = receiver.received_requests.find(
-//       (req) => req.user.toString() === senderId && req.status === "pending"
-//     );
-
-//     if (existingReceivedRequest) {
-//       return res.status(400).send({
-//         success: false,
-//         message: "Already send request.",
-//       });
-//     }
-
-//     await User.findByIdAndUpdate(senderId, {
-//       $addToSet: { sended_requests: { user: receiver, status: "pending" } },
-//     });
-
-//     await User.findByIdAndUpdate(receiverId, {
-//       $addToSet: { received_requests: { user: sender, status: "pending" } },
-//     });
-//     // console.log(receiver._id,"seder token");
-
-//     const Notification = {
-//       senderName: sender.name,
-//       fcmToken: receiver.fcmToken,
-//       title: "New work",
-//       message: `${sender.name} has sent you a request.`,
-//       receiverId: receiver._id, // Include the receiver's ID to store the notification
-//     };
-//     // console.log(Notification,"notif" );
-
-//     await sendNotification(Notification);
-
-//     const updatedSender = await User.findById(senderId).populate(
-//       "sended_requests.user"
-//     );
-//     const updatedReceiver = await User.findById(receiverId).populate(
-//       "received_requests.user"
-//     );
-
-//     return res.status(200).send({
-//       success: true,
-//       message: "Request sent successfully.",
-//       sender: updatedSender,
-//       receiver: updatedReceiver,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     return res.status(500).send({
-//       success: false,
-//       message: "An error occurred during the request.",
-//       error: error.message,
-//     });
-//   }
-// };
-
-// Function to send FCM Notification
-const sendNotification = async ({ fcmToken, title, message }) => {
-  if (!fcmToken) {
-    console.error("FCM token is missing. Notification not sent.");
-    return;
-  }
-
-  const payload = {
-    token: fcmToken,
-    notification: {
-      title,
-      body: message,
-    },
-    data: { click_action: "FLUTTER_NOTIFICATION_CLICK" }, // Optional custom data
-  };
-
-  try {
-    await admin.messaging().send(payload);
-    console.log("Notification sent successfully:", title);
-  } catch (error) {
-    console.error("Error sending notification:", error);
-  }
-};
-
-// Send Request Function
 const sentRequest = async (req, res) => {
   try {
     const { receiverId } = req.body;
     const senderId = req.user.id;
 
     if (!receiverId || !senderId) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Sender or receiver ID is missing." });
+      return res.status(400).send({
+        success: false,
+        message: "Sender or receiver ID is missing.",
+      });
     }
 
     if (senderId.toString() === receiverId) {
-      return res.status(400).json({
+      return res.status(400).send({
         success: false,
         message: "You cannot send a request to yourself.",
       });
@@ -143,43 +25,53 @@ const sentRequest = async (req, res) => {
     const receiver = await User.findById(receiverId);
 
     if (!sender || !receiver) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Sender or receiver not found." });
+      return res.status(404).send({
+        success: false,
+        message: "Sender or receiver not found.",
+      });
     }
-
-    // Check if a pending request already exists
     const existingSentRequest = sender.sended_requests.find(
       (req) => req.user.toString() === receiverId && req.status === "pending"
     );
+
+    if (existingSentRequest) {
+      return res.status(400).send({
+        success: false,
+        message: "Already send request.",
+      });
+    }
+
+    // Check if a pending request already exists from receiver to sender
     const existingReceivedRequest = receiver.received_requests.find(
       (req) => req.user.toString() === senderId && req.status === "pending"
     );
 
-    if (existingSentRequest || existingReceivedRequest) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Request already sent." });
+    if (existingReceivedRequest) {
+      return res.status(400).send({
+        success: false,
+        message: "Already send request.",
+      });
     }
 
-    // Update sender and receiver requests
     await User.findByIdAndUpdate(senderId, {
       $addToSet: { sended_requests: { user: receiver, status: "pending" } },
     });
+
     await User.findByIdAndUpdate(receiverId, {
       $addToSet: { received_requests: { user: sender, status: "pending" } },
     });
+    // console.log(receiver._id,"seder token");
 
-    // Send FCM Notification
-    if (receiver.fcmToken) {
-      await sendNotification({
-        fcmToken: receiver.fcmToken,
-        title: "New Work Request",
-        message: `${sender.name} has sent you a request.`,
-      });
-    } else {
-      console.warn("Receiver does not have an FCM token.");
-    }
+    const Notification = {
+      senderName: sender.name,
+      fcmToken: receiver.fcmToken,
+      title: "New work",
+      message: `${sender.name} has sent you a request.`,
+      receiverId: receiver._id, // Include the receiver's ID to store the notification
+    };
+    // console.log(Notification,"notif" );
+
+    await sendNotification(Notification);
 
     const updatedSender = await User.findById(senderId).populate(
       "sended_requests.user"
@@ -188,7 +80,7 @@ const sentRequest = async (req, res) => {
       "received_requests.user"
     );
 
-    return res.status(200).json({
+    return res.status(200).send({
       success: true,
       message: "Request sent successfully.",
       sender: updatedSender,
@@ -196,13 +88,121 @@ const sentRequest = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({
+    return res.status(500).send({
       success: false,
       message: "An error occurred during the request.",
       error: error.message,
     });
   }
 };
+
+// Function to send FCM Notification
+// const sendNotification = async ({ fcmToken, title, message }) => {
+//   if (!fcmToken) {
+//     console.error("FCM token is missing. Notification not sent.");
+//     return;
+//   }
+
+//   const payload = {
+//     token: fcmToken,
+//     notification: {
+//       title,
+//       body: message,
+//     },
+//     data: { click_action: "FLUTTER_NOTIFICATION_CLICK" }, // Optional custom data
+//   };
+
+//   try {
+//     await admin.messaging().send(payload);
+//     console.log("Notification sent successfully:", title);
+//   } catch (error) {
+//     console.error("Error sending notification:", error);
+//   }
+// };
+
+// Send Request Function
+// const sentRequest = async (req, res) => {
+//   try {
+//     const { receiverId } = req.body;
+//     const senderId = req.user.id;
+
+//     if (!receiverId || !senderId) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Sender or receiver ID is missing." });
+//     }
+
+//     if (senderId.toString() === receiverId) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "You cannot send a request to yourself.",
+//       });
+//     }
+
+//     const sender = await User.findById(senderId);
+//     const receiver = await User.findById(receiverId);
+
+//     if (!sender || !receiver) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Sender or receiver not found." });
+//     }
+
+//     // Check if a pending request already exists
+//     const existingSentRequest = sender.sended_requests.find(
+//       (req) => req.user.toString() === receiverId && req.status === "pending"
+//     );
+//     const existingReceivedRequest = receiver.received_requests.find(
+//       (req) => req.user.toString() === senderId && req.status === "pending"
+//     );
+
+//     if (existingSentRequest || existingReceivedRequest) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Request already sent." });
+//     }
+
+//     // Update sender and receiver requests
+//     await User.findByIdAndUpdate(senderId, {
+//       $addToSet: { sended_requests: { user: receiver, status: "pending" } },
+//     });
+//     await User.findByIdAndUpdate(receiverId, {
+//       $addToSet: { received_requests: { user: sender, status: "pending" } },
+//     });
+
+//     // Send FCM Notification
+//     if (receiver.fcmToken) {
+//       await sendNotification({
+//         fcmToken: receiver.fcmToken,
+//         title: "New Work Request",
+//         message: `${sender.name} has sent you a request.`,
+//       });
+//     } else {
+//       console.warn("Receiver does not have an FCM token.");
+//     }
+
+//     const updatedSender = await User.findById(senderId).populate(
+//       "sended_requests.user"
+//     );
+//     const updatedReceiver = await User.findById(receiverId).populate(
+//       "received_requests.user"
+//     );
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Request sent successfully.",
+//       sender: updatedSender,
+//       receiver: updatedReceiver,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "An error occurred during the request.",
+//       error: error.message,
+//     });
+//   }
+// };
 
 const sentRequestMobile = async (req, res) => {
   try {
@@ -289,16 +289,16 @@ const sentRequestMobile = async (req, res) => {
   }
 };
 
-// const sendRequestNotification = async (userId, title, message) => {
-//   try {
-//     const user = await User.findById(userId);
-//     if (user && user.fcmToken) {
-//       await sendNotification(user.fcmToken, title, message);
-//     }
-//   } catch (error) {
-//     console.error("Error sending notification:", error);
-//   }
-// };
+const sendRequestNotification = async (userId, title, message) => {
+  try {
+    const user = await User.findById(userId);
+    if (user && user.fcmToken) {
+      await sendNotification(user.fcmToken, title, message);
+    }
+  } catch (error) {
+    console.error("Error sending notification:", error);
+  }
+};
 
 const receivedRequest = async (req, res) => {
   try {

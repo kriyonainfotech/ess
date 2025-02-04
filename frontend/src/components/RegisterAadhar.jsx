@@ -116,17 +116,20 @@ const RegisterAadhar = () => {
         // }
         setLoading(true);
         try {
-            const registerResponse = await axios.post(`${backend_API}/auth/registerUserweb`,
-                formData,
-                { headers: { "Content-Type": "multipart/form-data" } }
-            );
+            const response = await axios.post(`${backend_API}/auth/registerUserweb`, formData, {
+                timeout: 60000, // 60 second timeout
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                }
+            });
 
-            if (registerResponse.status === 200) {
-                toast.success(registerResponse.data.message || "Registration successful! Your account is awaiting admin approval.");
+            if (response.status === 200) {
+                toast.success(response.data.message || "Registration successful! Your account is awaiting admin approval.");
                 navigate("/login");
             } else {
-                toast(registerResponse?.data?.message || "Registration failed.");
+                toast.error(response?.data?.message || "Registration failed.");
             }
+
 
         } catch (error) {
             console.error("Error during Registration:", error);

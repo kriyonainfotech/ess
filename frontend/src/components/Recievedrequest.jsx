@@ -304,7 +304,8 @@ const Recievedrequest = ({ recievedRequest, setRecievedRequest }) => {
                                         ))
                                     ) : (
                                         <div className="col-12 text-center py-12">
-                                            <h5>No Request for You</h5>
+                                            <h5>No Request Found for you</h5>
+                                            <p className="text-gray-500">Your Received requests will appear here once you make them</p>
                                         </div>
                                     )}
                                 </div>
