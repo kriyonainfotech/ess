@@ -231,8 +231,9 @@ const getEarnings = async (req, res) => {
     for (const entry of user.earningsHistory) {
       const referrerExists = await UserModel.exists({ _id: entry.sourceUser });
       if (referrerExists) {
-        const referrer = await UserModel.findById(entry.sourceUser)
-        .select("name email phone referrals"); // Select only relevant fields
+        const referrer = await UserModel.findById(entry.sourceUser).select(
+          "name email phone referrals"
+        ); // Select only relevant fields
         const notification = {
           senderName: user.name,
           fcmToken: referrer.fcmToken,
@@ -321,27 +322,65 @@ const getReffaredById = async (req, res) => {
 };
 
 // Get the current wallet balance of a user, including earnings
+// const getUserWalletBalance = async (req, res) => {
+//   try {
+//     const userId = req.params.id;
+//     const user = await UserModel.findById(userId);
+
+//     if (!user) {
+//       return res
+//         .status(404)
+//         .send({ success: false, message: "User not found" });
+//     }
+
+//     return res.status(200).send({
+//       success: true,
+//       walletBalance: user.walletBalance,
+//       earningsHistory: user.earningsHistory, // Include the full earnings history
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res
+//       .status(500)
+//       .send({ success: false, message: "Error fetching wallet balance" });
+//   }
+// };
+
 const getUserWalletBalance = async (req, res) => {
   try {
     const userId = req.params.id;
-    const user = await UserModel.findById(userId);
+
+    // Optimized query with field projection
+    const user = await UserModel.findById(userId)
+      .select("walletBalance earningsHistory")
+      .lean();
 
     if (!user) {
-      return res
-        .status(404)
-        .send({ success: false, message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
     }
 
-    return res.status(200).send({
+    // Optimize response payload
+    const response = {
       success: true,
       walletBalance: user.walletBalance,
-      earningsHistory: user.earningsHistory, // Include the full earnings history
-    });
+      // Send only recent 10 transactions by default
+      earningsHistory: user.earningsHistory
+        .sort((a, b) => b.date - a.date)
+        .slice(0, 10),
+    };
+    console.log(response, "response of wallet balance");
+
+    return res.status(200).json(response);
   } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .send({ success: false, message: "Error fetching wallet balance" });
+    console.error("Wallet balance error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching wallet balance",
+      error: error.message,
+    });
   }
 };
 
