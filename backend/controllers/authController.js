@@ -729,7 +729,7 @@ const registerUserweb = async (req, res) => {
     return res.status(500).send({
       success: false,
       message: "An error occurred during registration",
-      error: error.message,
+      error: error,
       timing: {
         errorOccurredAfter: errorTime,
       },

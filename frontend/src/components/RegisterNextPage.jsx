@@ -11,7 +11,6 @@ import { UserContext } from '../UserContext';
 
 const backend_API = import.meta.env.VITE_API_URL;
 const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID;
-console.log(RAZORPAY_KEY_ID, "keyy");
 
 const RegisterNextPage = () => {
   const { user } = useContext(UserContext);
@@ -64,26 +63,19 @@ const RegisterNextPage = () => {
     e.preventDefault();
     setLoading(true);
 
-    // Log the incoming data including referral code
-    console.log("[INFO] Previous registration data:", previousData);
-
     const fullData = {
       ...previousData,
       businessName,
       businessCategory,
       businessAddress,
       businessDetaile,
-      fcmToken,
-      // Make sure referralCode is included from previousData
-      referralCode: previousData.referralCode
+      fcmToken
+
     };
+    navigate("/RegisterAadhar", { state: fullData })
 
-    console.log("[INFO] Full registration data:", fullData);
 
-    // Navigate to next step with all data including referral code
-    navigate("/RegisterAadhar", {
-      state: fullData
-    });
+
   };
 
   return (
