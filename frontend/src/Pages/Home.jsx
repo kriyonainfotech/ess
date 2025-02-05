@@ -29,41 +29,32 @@ const Home = () => {
   const [showModal, setShowModal] = useState(user?.paymentVerified === false);
   const [loading, setLoading] = useState(false);
 
-  // Fetch Categories
+  // Fetch Categories and Banners
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const response = await axios.get(`${backend_API}/category/getAllCategory`);
-        const sortedCategories = response.data.category.sort((a, b) =>
-          a.categoryName.localeCompare(b.categoryName)
-        );
-        setCategories(sortedCategories);
+
+        // Just set the categories directly - they should already be unique from backend
+        setCategories(response.data.category);
       } catch (error) {
-        console.error("Error fetching categories:", error);
-        toast.error(error?.response?.data?.message || "Error fetching categories");
+        console.error("[ERROR] Failed to fetch categories:", error);
+        toast.error("Error fetching categories");
       }
     };
 
     fetchCategories();
   }, []);
 
-  // Group categories and banners
+  // Simplified grouping logic
   const groupedCategoriesAndBanners = useMemo(() => {
-    const categoryGroupSize = 15;
-    const bannerGroupSize = 10;
-    const groupedResult = [];
-    let i = 0, j = 0;
+    if (!categories.length) return [];
 
-    while (i < categories.length || j < bannerImage.length) {
-      groupedResult.push({
-        categories: categories.slice(i, i + categoryGroupSize),
-        BannerImage: bannerImage.slice(j, j + bannerGroupSize),
-      });
-      i += categoryGroupSize;
-      j += bannerGroupSize;
-    }
-
-    return groupedResult;
+    // Single group with all categories
+    return [{
+      categories: categories,
+      BannerImage: bannerImage
+    }];
   }, [categories, bannerImage]);
 
   // Handle Payment Verification
@@ -86,7 +77,7 @@ const Home = () => {
           amount: order.amount,
           currency: order.currency,
           name: "Enjoy Enjoy Services",
-          description: "Registration Payment - ₹121",
+          description: "Test Payment",
           order_id: order.id,
           handler: async (response) => {
             try {
@@ -170,12 +161,13 @@ const Home = () => {
           <h4>Popular Offers</h4>
         </div>
 
-        {groupedCategoriesAndBanners.map((group, index) => (
-          <React.Fragment key={index}>
-            <Benner BannerImage={group.BannerImage} setBannerImage={setBannerImage} />
-            <ServieceCategories categories={group.categories} />
+        {/* Single render of categories */}
+        {groupedCategoriesAndBanners.length > 0 && (
+          <React.Fragment>
+            <Benner BannerImage={bannerImage} setBannerImage={setBannerImage} />
+            <ServieceCategories categories={categories} />
           </React.Fragment>
-        ))}
+        )}
       </div>
 
       <Footer />

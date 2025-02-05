@@ -117,25 +117,50 @@ const deleteCategory = async (req, res) => {
 
 const getAllCategory = async (req, res) => {
   try {
-    // Fetch all categories and sort them alphabetically by categoryName
-    const categories = await Category.find({})
-      .collation({ locale: "en", strength: 2 }) // Case-insensitive sorting
-      .sort({ categoryName: 1 });
+    // Fetch all unique categories and sort them alphabetically by categoryName
+    const categories = await Category.aggregate([
+      // First stage: Group by categoryName to remove duplicates
+      {
+        $group: {
+          _id: {
+            categoryName: { $toLower: "$categoryName" }, // Convert to lowercase for case-insensitive grouping
+          },
+          originalId: { $first: "$_id" },
+          categoryName: { $first: "$categoryName" },
+          image: { $first: "$image" },
+        },
+      },
+      // Second stage: Sort alphabetically
+      {
+        $sort: {
+          "_id.categoryName": 1,
+        },
+      },
+      // Third stage: Project the final format
+      {
+        $project: {
+          _id: "$originalId",
+          categoryName: "$categoryName",
+          image: "$image",
+        },
+      },
+    ]).collation({ locale: "en", strength: 2 }); // Case-insensitive comparison
 
-    // Log the sorted categories for verification
-    // console.log(
-    //   "[INFO] Categories sorted alphabetically:",
-    //   categories.map((cat) => cat.categoryName)
-    // );
+    // Additional check to ensure no duplicates
+    const uniqueCategories = Array.from(
+      new Map(
+        categories.map((item) => [item.categoryName.toLowerCase(), item])
+      ).values()
+    );
 
     return res.status(200).send({
       success: true,
       message: "Categories fetched successfully",
-      category: categories,
+      category: uniqueCategories,
     });
   } catch (error) {
     console.error("[ERROR] Failed to fetch categories:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to fetch categories",
       error: error.message,
