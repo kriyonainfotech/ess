@@ -40,11 +40,12 @@ function Registration() {
   };
   useEffect(() => {
     // Extract referral code from URL
-    const queryParams = new URLSearchParams(location.search);
+    const queryParams = new URLSearchParams(window.location.search);
     const code = queryParams.get("referralCode");
-    if (code) setReferralCode(code);
-
-    // Fetch categories
+    if (code) {
+      console.log("[INFO] Referral code found in URL:", code);
+      setReferralCode(code);
+    }
   }, []);
   const validateInputs = () => {
     const newErrors = {};
@@ -71,7 +72,7 @@ function Registration() {
       newErrors.password = 'Password is required.';
     } else if (password.length < 4) {
       newErrors.password = 'Password must be at least 4 characters long.';
-    } 
+    }
 
     if (password !== confirmpassword) {
       newErrors.confirmpassword = 'Passwords do not match.';
@@ -144,7 +145,6 @@ function Registration() {
     setLoading(true)
     e.preventDefault();
 
-
     if (!validateInputs()) {
       setLoading(false);
       return;
@@ -158,10 +158,27 @@ function Registration() {
       pincode
     }
     setAddress(newadd)
-    console.log(address, "address");
+    console.log("Form data:", {
+      name,
+      email,
+      password,
+      phone,
+      address: newadd,
+      referralCode // Include referral code in log
+    });
 
-    navigete("/registernext", { state: { name: name, email: email, password: password, confirmpassword: password, phone: phone, address: newadd, referralCode } })
-
+    // Pass referral code in navigation state
+    navigete("/registernext", {
+      state: {
+        name,
+        email,
+        password,
+        confirmpassword: password,
+        phone,
+        address: newadd,
+        referralCode // Make sure to include referralCode here
+      }
+    });
   };
 
 
@@ -212,20 +229,16 @@ function Registration() {
 
             <form action="" onSubmit={handleSubmits} className='py-5'>
               <div className='px-16'>
-                {
-                  referralCode ? (
+                {referralCode && (
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-600">Referral Code: {referralCode}</p>
                     <input
-                      type="text"
+                      type="hidden"
                       value={referralCode}
-                      onChange={(e) => setReferralCode(e.target.value)}
-                      className="w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-2" placeholder="Name" />
-                    // {errors.name && <span className="error text-orange text-orange text-sm">{errors.name}</span>}
-
-                  ) : (
-                    <></>
-                  )
-                }
-
+                      name="referralCode"
+                    />
+                  </div>
+                )}
               </div>
               <div className="col-12 d-flex flex-wrap justify-content-center p-5">
 

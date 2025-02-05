@@ -70,6 +70,15 @@ const UserDetailsModal = ({ user, onClose, onApprove }) => {
                                     <img src={user.backAadhar} width={50} alt="" />
                                 </td>
                             </tr>
+                            <tr>
+                                <td className="border border-gray-300 px-4 py-2 font-semibold">Referred By</td>
+                                <td className="border border-gray-300 px-4 py-2">
+                                    {user.referredBy && user.referredBy.length > 0
+                                        ? user.referredBy.map(referrer => referrer.phone || 'Unknown').join(', ')
+                                        : 'None'
+                                    }
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -98,7 +107,13 @@ const AllUsers = () => {
                 headers: { 'Content-Type': 'application/json' },
             });
             const data = await response.data;
-            const filteredUsers = data.user.filter(user => user.isAdminApproved === false);
+            const filteredUsers = data.user
+                .filter(user => user.isAdminApproved === false)
+                .map(user => ({
+                    ...user,
+                    referredBy: Array.isArray(user.referredBy) ? user.referredBy : []
+                }));
+            console.log('Users with referral info:', filteredUsers);
             setUserList(filteredUsers);
         } catch (error) {
             console.error('Error:', error.message);
@@ -125,21 +140,21 @@ const AllUsers = () => {
     }, []);
 
     const deleteUser = async (uid) => {
-         toast.info(
-              <div>
+        toast.info(
+            <div>
                 <p>Are you sure you want to delete ?</p>
                 <div className="d-flex justify-content-center gap-2">
-                  <button className="btn btn-danger btn-sm" onClick={() => confirmDelete(uid)}>Yes</button>
-                  <button className="btn btn-secondary btn-sm" onClick={toast.dismiss}>No</button>
+                    <button className="btn btn-danger btn-sm" onClick={() => confirmDelete(uid)}>Yes</button>
+                    <button className="btn btn-secondary btn-sm" onClick={toast.dismiss}>No</button>
                 </div>
-              </div>,
-              { autoClose: true, closeOnClick: true }
-            );
-          };
-          const confirmDelete = async(uid) => {
-            toast.dismiss(); // Close the confirmation toast
-          
-            
+            </div>,
+            { autoClose: true, closeOnClick: true }
+        );
+    };
+    const confirmDelete = async (uid) => {
+        toast.dismiss(); // Close the confirmation toast
+
+
         try {
             const response = await axios.delete(`${backend_API}/auth/deleteUser`, {
                 headers: { 'Content-Type': 'application/json' },
@@ -208,55 +223,75 @@ const AllUsers = () => {
                     <div className="container">
                         <div className="row">
                             <div className="col-12">
-                                <div className="col-12 col-md-4">
-                                    <div>
-                                        <label htmlFor="role" className="form-label">Select filter</label>
-                                        <select
-                                            id="role"
-                                            className="form-select"
-                                            value={filter}
-                                            onChange={(e) => setFilter(e.target.value)}
-                                        >
-                                            <option value="">All</option>
-                                            <option value="A-Z">A-Z</option>
-                                            <option value="Z-A">Z-A</option>
-                                            <option value="date">DATE</option>
-                                            <option value="category">Category</option>
-                                        </select>
-                                    </div>
-                                    {filter === 'date' && (
-                                        <div className="mt-3">
-                                            <label className="form-label">Select Date</label>
-                                            <div className="input-group">
-                                                <DatePicker
-                                                    selected={selectedDate}
-                                                    onChange={(date) => setSelectedDate(date)}
-                                                    dateFormat="yyyy-MM-dd"
-                                                    className="form-control"
-                                                />
-                                                <span className="input-group-text">
-                                                    <MdDateRange />
-                                                </span>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {filter === 'category' && (
-                                        <div className="mt-3">
-                                            <label className="form-label">Select Category</label>
+                                <div className="d-flex justify-content-between align-items-start">
+                                    <div className="col-12 col-md-4">
+                                        <div>
+                                            <label htmlFor="role" className="form-label">Select filter</label>
                                             <select
+                                                id="role"
                                                 className="form-select"
-                                                value={selectedCategory}
-                                                onChange={(e) => setSelectedCategory(e.target.value)}
+                                                value={filter}
+                                                onChange={(e) => setFilter(e.target.value)}
                                             >
-                                                <option value="">All Categories</option>
-                                                {categories.map((category) => (
-                                                    <option key={category._id} value={category.categoryName}>
-                                                        {category.categoryName}
-                                                    </option>
-                                                ))}
+                                                <option value="">All</option>
+                                                <option value="A-Z">A-Z</option>
+                                                <option value="Z-A">Z-A</option>
+                                                <option value="date">DATE</option>
+                                                <option value="category">Category</option>
                                             </select>
                                         </div>
-                                    )}
+                                        {filter === 'date' && (
+                                            <div className="mt-3">
+                                                <label className="form-label">Select Date</label>
+                                                <div className="input-group">
+                                                    <DatePicker
+                                                        selected={selectedDate}
+                                                        onChange={(date) => setSelectedDate(date)}
+                                                        dateFormat="yyyy-MM-dd"
+                                                        className="form-control"
+                                                    />
+                                                    <span className="input-group-text">
+                                                        <MdDateRange />
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {filter === 'category' && (
+                                            <div className="mt-3">
+                                                <label className="form-label">Select Category</label>
+                                                <select
+                                                    className="form-select"
+                                                    value={selectedCategory}
+                                                    onChange={(e) => setSelectedCategory(e.target.value)}
+                                                >
+                                                    <option value="">All Categories</option>
+                                                    {categories.map((category) => (
+                                                        <option key={category._id} value={category.categoryName}>
+                                                            {category.categoryName}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="mt-4">
+                                        <button
+                                            onClick={() => navigate('/admin/users')}
+                                            className="btn btn-primary d-flex align-items-center gap-2"
+                                        >
+                                            <span>View All Users</span>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="16"
+                                                height="16"
+                                                fill="currentColor"
+                                                className="bi bi-arrow-right"
+                                                viewBox="0 0 16 16"
+                                            >
+                                                <path fillRule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -279,6 +314,7 @@ const AllUsers = () => {
                                             <th>Business Name</th>
                                             <th>Business Category</th>
                                             <th>Business Address</th>
+                                            <th>Referred By</th>
                                             <th>Approve</th>
                                             <th>Action</th>
                                         </tr>
@@ -297,6 +333,13 @@ const AllUsers = () => {
                                                 <td>{user.businessName}</td>
                                                 <td>{user.businessCategory}</td>
                                                 <td>{user.businessAddress}</td>
+                                                <td>
+                                                    {user.referredBy && user.referredBy.length > 0 ? (
+                                                        user.referredBy.map(referrer => referrer.phone || 'Unknown').join(', ')
+                                                    ) : (
+                                                        'None'
+                                                    )}
+                                                </td>
                                                 <td>
                                                     <button
                                                         onClick={(e) => {

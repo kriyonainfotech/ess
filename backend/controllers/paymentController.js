@@ -1,4 +1,3 @@
-
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
 const User = require("../model/user");
@@ -10,19 +9,8 @@ const razorpayInstance = new Razorpay({
 
 const CreateOrder = async (req, res) => {
   try {
-    // const userId = req.user.id;
-    // const user = await User.findById(userId);
-
-    // if (!user) {
-    //   return res
-    //     .status(404)
-    //     .json({ success: false, message: "User not found" });
-    // }
-
-    // const { amount } = req.body;
     const { amount } = req.body;
 
-    // Check for missing fields
     if (!amount) {
       return res.status(400).send({
         success: false,
@@ -30,126 +18,182 @@ const CreateOrder = async (req, res) => {
       });
     }
 
+    console.log("[INFO] Creating order with Razorpay config:", {
+      keyId: process.env.RAZORPAY_KEY_ID,
+      isLive: !process.env.RAZORPAY_KEY_ID.includes("test"),
+    });
 
     const options = {
-      amount: Number(amount) * 100, // Convert amount to paise (mandatory)
+      amount: Number(amount) * 100, // Convert to paise
       currency: "INR",
-      receipt: crypto.randomBytes(10).toString("hex"), // Generate a unique receipt ID
-    };
-
-    // Create the order using async/await (no need for callback)
-    const order = await razorpayInstance.orders.create(options);
-
-    const paymentLinkRequest = {
-      amount: order.amount,
-      // You can add customer details like:
-      // customer: {
-      //   name: user.name,
-      //   email: user.email,
-      // },
+      receipt: crypto.randomBytes(10).toString("hex"),
     };
 
     try {
+      const order = await razorpayInstance.orders.create(options);
+      console.log("[INFO] Order created:", order);
+
+      const paymentLinkRequest = {
+        amount: order.amount,
+        currency: "INR",
+        accept_partial: false,
+        description: "Registration Payment",
+        customer: {
+          name: "Customer",
+          email: "customer@example.com",
+          contact: "9876543210",
+        },
+        notify: {
+          sms: true,
+          email: true,
+        },
+        reminder_enable: true,
+      };
+
       const paymentLink = await razorpayInstance.paymentLink.create(
         paymentLinkRequest
       );
-      console.log(paymentLink, "pl");
+      console.log("[INFO] Payment link created:", paymentLink);
 
       res.status(200).json({
         success: true,
         data: {
           order,
-          payment_link: paymentLink.short_url, // Send the payment link URL
+          payment_link: paymentLink.short_url,
         },
       });
-
-      console.log("Order:", order);
-      console.log("Payment Link:", paymentLink.short_url);
-    } catch (linkError) {
-      console.error("Error creating payment link:", linkError);
+    } catch (error) {
+      console.error("[ERROR] Razorpay API error:", error);
       res.status(500).json({
         success: false,
-        message: "Error creating payment link",
-        error: linkError.message || "Unknown error",
+        message: "Error creating payment",
+        error: error.message || "Unknown error",
+        details: error.description || error.error?.description,
       });
     }
   } catch (error) {
-    console.error("Error creating Razorpay order:", error);
+    console.error("[ERROR] Server error:", error);
     res.status(500).json({
       success: false,
-      message: error?.error?.description || "Failed to create payment link",
-      error: error.message || "Unknown error",
+      message: "Server error",
+      error: error.message,
     });
   }
 };
 
-
 // Controller to verify payment by fetching payment details using payment_id
 const verifyPayment = async (req, res) => {
   try {
-    const { payment_id, user_id } = req.body; // Ensure you receive user_id
-     
-    if (!payment_id) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Payment ID is required" });
+    const { payment_id, user_id } = req.body;
+
+    if (!payment_id || !user_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment ID and User ID are required",
+      });
     }
 
-    // Fetch payment details from Razorpay using payment_id
+    // Fetch payment details from Razorpay
     const paymentDetails = await razorpayInstance.payments.fetch(payment_id);
     if (!paymentDetails) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Payment not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Payment not found",
+      });
     }
- // If payment is authorized, capture it
- if (paymentDetails.status === "authorized") {
-  try {
-    const capturedPayment = await razorpayInstance.payments.capture(payment_id, paymentDetails.amount);
-    // console.log("Captured Payment:", capturedPayment);
-   
-    return res.status(200).json({
-      success: true,
-      message: "Payment captured and verified successfully",
-      paymentDetails: capturedPayment,
-    });
-  } catch (error) {
-    console.error("Error capturing payment:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to capture payment",
-      error: error.message || "Unknown error",
-    });
-  }
-}
 
-    // Check if payment status is 'captured' (successful payment)
+    // If payment is authorized, capture it
+    if (paymentDetails.status === "authorized") {
+      try {
+        const capturedPayment = await razorpayInstance.payments.capture(
+          payment_id,
+          paymentDetails.amount
+        );
+        console.log(
+          "[INFO] Payment captured successfully:",
+          capturedPayment.id
+        );
+
+        // Update user payment status
+        const expiryDate = new Date();
+        expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+
+        const updatedUser = await User.findByIdAndUpdate(
+          user_id,
+          {
+            paymentVerified: true,
+            paymentExpiry: expiryDate,
+          },
+          { new: true } // Return updated document
+        );
+
+        if (!updatedUser) {
+          throw new Error("Failed to update user payment status");
+        }
+
+        console.log("[INFO] User payment status updated:", updatedUser._id);
+
+        return res.status(200).json({
+          success: true,
+          message: "Payment captured and verified successfully",
+          paymentDetails: capturedPayment,
+          user: {
+            paymentVerified: updatedUser.paymentVerified,
+            paymentExpiry: updatedUser.paymentExpiry,
+          },
+        });
+      } catch (error) {
+        console.error("[ERROR] Payment capture/update failed:", error);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to capture payment or update user status",
+          error: error.message,
+        });
+      }
+    }
+
+    // If payment is already captured
     if (paymentDetails.status === "captured") {
-      // await User.findByIdAndUpdate(user_id, { paymentVerified: true });
+      // Update user payment status
       const expiryDate = new Date();
       expiryDate.setFullYear(expiryDate.getFullYear() + 1);
 
-      await User.findByIdAndUpdate(user_id, {
-        paymentVerified: true,
-        paymentExpiry: expiryDate,
-      });
+      const updatedUser = await User.findByIdAndUpdate(
+        user_id,
+        {
+          paymentVerified: true,
+          paymentExpiry: expiryDate,
+        },
+        { new: true }
+      );
+
+      if (!updatedUser) {
+        throw new Error("Failed to update user payment status");
+      }
+
+      console.log("[INFO] User payment status updated:", updatedUser._id);
+
       return res.status(200).json({
         success: true,
         message: "Payment verified successfully",
         paymentDetails,
-      });
-    } else {
-      return res.status(400).json({
-        success: false,
-        message: "Payment failed or not yet captured",
+        user: {
+          paymentVerified: updatedUser.paymentVerified,
+          paymentExpiry: updatedUser.paymentExpiry,
+        },
       });
     }
+
+    return res.status(400).json({
+      success: false,
+      message: "Payment failed or not yet captured",
+    });
   } catch (error) {
-    console.error("Error verifying payment:", error);
+    console.error("[ERROR] Payment verification failed:", error);
     return res.status(500).json({
       success: false,
       message: "Error verifying payment",
-      error: error.message || "Unknown error",
+      error: error.message,
     });
   }
 };

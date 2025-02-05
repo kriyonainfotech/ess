@@ -163,101 +163,47 @@ const getReferredBy = async (req, res) => {
   }
 };
 
-// const getEarnings = async (req, res) => {
-//   try {
-//     const userId = req.params.id;
-//     const user = await UserModel.findById(userId);
-
-//     if (!user) {
-//       return res.status(404).send({ success: false, message: "User not found" });
-//     }
-
-//     // Filter out earnings history entries with sourceUser IDs that no longer exist
-//     const validEarningsHistory = [];
-//     for (const entry of user.earningsHistory) {
-//       const referrerExists = await UserModel.exists({ _id: entry.sourceUser });
-//       if (referrerExists) {
-//         // Fetching sourceUser details (you can customize this as needed)
-//         const referrer = await UserModel.findById(entry.sourceUser)
-//           .select('name email phone referrals'); // Select only relevant fields
-//           const notification = {
-//             senderName: user.name,
-//             fcmToken: referrer.fcmToken,
-//             title: "New reword",
-//             message: `You earned from ${user.name}'s activity.`,
-//             receiverId: referrer._id,
-//           };
-
-//           await sendNotification(notification);
-//         validEarningsHistory.push({
-//           ...entry,
-//           sourceUserDetails: referrer, // Attach source user details
-//         });
-//       }
-//     }
-
-//     // Optionally, update the user's earningsHistory with only valid entries (if you want to save the cleaned data)
-//     user.earningsHistory = validEarningsHistory;
-//     await user.save();
-
-//     return res.status(200).send({
-//       success: true,
-//       earnings: user.walletBalance, // Assuming `walletBalance` represents earnings
-//       earningsHistory: validEarningsHistory,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     return res.status(500).send({
-//       success: false,
-//       message: "Error fetching earnings",
-//       error: error.message,
-//     });
-//   }
-// };
-
 const getEarnings = async (req, res) => {
   try {
     const userId = req.params.id;
-    const user = await UserModel.findById(userId);
+
+    // Add timeout to the database query
+    const user = await UserModel.findById(userId)
+      .select("walletBalance earningsHistory")
+      .maxTimeMS(5000); // 5 second timeout for DB query
 
     if (!user) {
-      return res
-        .status(404)
-        .send({ success: false, message: "User not found" });
+      return res.status(404).send({
+        success: false,
+        message: "User not found",
+      });
     }
 
-    // Filter out earnings history entries with sourceUser IDs that no longer exist
-    const validEarningsHistory = [];
-    for (const entry of user.earningsHistory) {
-      const referrerExists = await UserModel.exists({ _id: entry.sourceUser });
-      if (referrerExists) {
-        const referrer = await UserModel.findById(entry.sourceUser).select(
-          "name email phone referrals"
-        ); // Select only relevant fields
-        const notification = {
-          senderName: user.name,
-          fcmToken: referrer.fcmToken,
-          title: "New reword",
-          message: `You earned ₹${entry.amount} from ${user.name}'s activity.`,
-          receiverId: referrer._id,
-        };
+    // Process earnings history in batches if needed
+    const validEarningsHistory = await Promise.all(
+      user.earningsHistory.slice(0, 10).map(async (entry) => {
+        const referrerExists = await UserModel.exists({
+          _id: entry.sourceUser,
+        });
+        if (referrerExists) {
+          return entry;
+        }
+        return null;
+      })
+    );
 
-        await sendNotification(notification);
-        validEarningsHistory.push(entry);
-      }
-    }
-
-    // Optionally, update the user's earningsHistory with only valid entries (if you want to save the cleaned data)
-    user.earningsHistory = validEarningsHistory;
-    await user.save();
+    // Filter out null entries
+    const filteredHistory = validEarningsHistory.filter(
+      (entry) => entry !== null
+    );
 
     return res.status(200).send({
       success: true,
-      earnings: user.walletBalance, // Assuming `walletBalance` represents earnings
-      earningsHistory: validEarningsHistory,
+      earnings: user.walletBalance,
+      earningsHistory: filteredHistory,
     });
   } catch (error) {
-    console.error(error);
+    console.error("[ERROR] Failed to fetch earnings:", error);
     return res.status(500).send({
       success: false,
       message: "Error fetching earnings",

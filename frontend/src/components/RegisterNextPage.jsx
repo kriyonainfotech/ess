@@ -60,9 +60,12 @@ const RegisterNextPage = () => {
   useEffect(() => {
     fetchCategory();
   }, []);
- const handleSubmits = async (e) => {
+  const handleSubmits = async (e) => {
     e.preventDefault();
     setLoading(true);
+
+    // Log the incoming data including referral code
+    console.log("[INFO] Previous registration data:", previousData);
 
     const fullData = {
       ...previousData,
@@ -70,13 +73,17 @@ const RegisterNextPage = () => {
       businessCategory,
       businessAddress,
       businessDetaile,
-      fcmToken
-
+      fcmToken,
+      // Make sure referralCode is included from previousData
+      referralCode: previousData.referralCode
     };
-    navigate("/RegisterAadhar", { state: fullData })
 
-   
+    console.log("[INFO] Full registration data:", fullData);
 
+    // Navigate to next step with all data including referral code
+    navigate("/RegisterAadhar", {
+      state: fullData
+    });
   };
 
   return (
@@ -156,12 +163,12 @@ const RegisterNextPage = () => {
                           value={businessAddress}
                           onChange={(e) => setBusinessAddress(e.target.value)}
                           className="w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-3" type="text" placeholder="Bussiness Address" />
-                        
+
                         <textarea
                           value={businessDetaile}
                           onChange={(e) => setBusinessDetaile(e.target.value)}
                           className="w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-3" type="text" placeholder="Bussiness Details" />
-                        
+
                         <button type='submit' className="mt-3 tracking-wide font-semibold bg-green-600 text-white w-full py-4 rounded-lg hover:bg-green-700 transition-all duration-300 ease-in-out flex items-center justify-center focus:shadow-outline focus:outline-none">
                           <svg className="w-6 h-6 -ml-2" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                             <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />

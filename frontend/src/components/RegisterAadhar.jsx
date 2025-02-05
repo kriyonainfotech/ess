@@ -90,10 +90,15 @@ const RegisterAadhar = () => {
         e.preventDefault();
         if (!frontAadhar || !backAadhar || !profilePic) {
             alert("Please upload all required files: Front Aadhar, Back Aadhar, and Profile Picture.");
-            return; // Stop further execution if any file is missing
+            return;
         }
 
         const formData = new FormData();
+
+        // Log the incoming data
+        console.log("[INFO] Registration data from previous step:", previousData);
+
+        // Add all form fields
         formData.append("name", previousData.name);
         formData.append("email", previousData.email);
         formData.append("phone", previousData.phone);
@@ -104,19 +109,26 @@ const RegisterAadhar = () => {
         formData.append("businessName", previousData.businessName);
         formData.append("businessAddress", previousData.businessAddress);
         formData.append("businessDetaile", previousData.businessDetaile);
-        formData.append("referralCode", previousData.referralCode);
+
+        // Make sure referral code is included if it exists
+        if (previousData.referralCode) {
+            console.log("[INFO] Including referral code:", previousData.referralCode);
+            formData.append("referralCode", previousData.referralCode);
+        }
+
         formData.append("fcmToken", fcmToken);
 
+        // Add files
         if (frontAadhar) formData.append("frontAadhar", frontAadhar);
         if (backAadhar) formData.append("backAadhar", backAadhar);
         if (profilePic) formData.append("profilePic", profilePic);
 
-        // for (const [key, value] of formData.entries()) {
-        //     console.log(`${key}:`, value, "dat");
-        // }
         setLoading(true);
         try {
-            const registerResponse = await axios.post(`${backend_API}/auth/registerUserweb`,
+            console.log("[INFO] Submitting registration with referral code:", previousData.referralCode);
+
+            const registerResponse = await axios.post(
+                `${backend_API}/auth/registerUserweb`,
                 formData,
                 { headers: { "Content-Type": "multipart/form-data" } }
             );
@@ -127,10 +139,11 @@ const RegisterAadhar = () => {
             } else {
                 toast.error(registerResponse?.data?.message || "Registration failed.");
             }
-
-
         } catch (error) {
-            console.error("Error during Registration:", error);
+            console.error("[ERROR] Registration failed:", error);
+            toast.error(error.response?.data?.message || "Registration failed. Please try again.");
+        } finally {
+            setLoading(false);
         }
     };
 

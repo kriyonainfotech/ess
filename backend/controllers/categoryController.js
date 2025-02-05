@@ -117,15 +117,29 @@ const deleteCategory = async (req, res) => {
 
 const getAllCategory = async (req, res) => {
   try {
-    const category = await Category.find({}).sort({ categoryName: 1 });
+    // Fetch all categories and sort them alphabetically by categoryName
+    const categories = await Category.find({})
+      .collation({ locale: "en", strength: 2 }) // Case-insensitive sorting
+      .sort({ categoryName: 1 });
+
+    // Log the sorted categories for verification
+    // console.log(
+    //   "[INFO] Categories sorted alphabetically:",
+    //   categories.map((cat) => cat.categoryName)
+    // );
+
     return res.status(200).send({
       success: true,
-      message: "Banners fetched successfully",
-      category,
+      message: "Categories fetched successfully",
+      category: categories,
     });
   } catch (error) {
-    console.error("Error :", error);
-    res.status(500).json({ success: false, message: "Server error", error });
+    console.error("[ERROR] Failed to fetch categories:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch categories",
+      error: error.message,
+    });
   }
 };
 

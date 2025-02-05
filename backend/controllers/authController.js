@@ -511,6 +511,20 @@ const registerUserweb = async (req, res) => {
   );
 
   try {
+    // Add referral code handling
+    const { referralCode } = req.body;
+    let referrer = null;
+
+    // If referral code exists, find the referrer
+    if (referralCode) {
+      referrer = await UserModel.findOne({ phone: referralCode });
+      if (!referrer) {
+        console.log("[INFO] Invalid referral code:", referralCode);
+      } else {
+        console.log("[INFO] Found referrer:", referrer._id);
+      }
+    }
+
     // Set a timeout for the entire request
     const requestTimeout = setTimeout(() => {
       if (!res.headersSent) {
@@ -648,7 +662,7 @@ const registerUserweb = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const newReferralCode = uuidv4();
 
-    // Create and save user
+    // Create and save user with referral information
     const saveStart = Date.now();
     const user = new UserModel({
       userId: uniqueId,
@@ -663,6 +677,7 @@ const registerUserweb = async (req, res) => {
       businessDetaile,
       fcmToken,
       referralCode: newReferralCode,
+      referredBy: referrer ? [referrer._id] : [], // Set referredBy if referrer exists
       isAdminApproved: false,
       walletBalance: 0,
       frontAadhar: frontAadharUrl,
@@ -672,6 +687,14 @@ const registerUserweb = async (req, res) => {
 
     await user.save();
     console.log(`[INFO] User save took: ${Date.now() - saveStart}ms`);
+
+    // Update referrer's referrals array if referrer exists
+    if (referrer) {
+      await UserModel.findByIdAndUpdate(referrer._id, {
+        $push: { referrals: user._id },
+      });
+      console.log("[INFO] Updated referrer's referrals array");
+    }
 
     // Generate token and send response
     const token = jwt.sign(
@@ -692,6 +715,7 @@ const registerUserweb = async (req, res) => {
         name: user.name,
         email: user.email,
         referralCode: newReferralCode,
+        referredBy: referrer ? referrer._id : null, // Include referrer info in response
       },
       token,
       timing: {
