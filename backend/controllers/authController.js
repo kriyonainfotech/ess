@@ -121,44 +121,46 @@ const registerUser = async (req, res) => {
   }
 };
 
-const loginUser = async (req, res) => {
-  try {
-    const { phone, password } = req.body;
-    if (!phone || !password) {
-      return res.status(400).send({
-        success: false,
-        message: "Phone and Password are required",
-      });
-    }
-    const user = await UserModel.findOne({ phone });
-    if (!user) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid Phone or Password",
-      });
-    }
+// const loginUser = async (req, res) => {
+//   try {
+//     const { phone, password } = req.body;
+//     if (!phone || !password) {
+//       return res.status(400).send({
+//         success: false,
+//         message: "Phone and Password are required",
+//       });
+//     }
+//     const user = await UserModel.findOne({ phone }).select(
+//       "-received_requests -sended_requests"
+//     );
+//     if (!user) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid Phone or Password",
+//       });
+//     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid Phone or Password",
-      });
-    }
-    // console.log(user,'user')
-    return res.status(200).json({
-      success: true,
-      message: `Login successful`,
-      user,
-    });
-  } catch (error) {
-    return res.status(500).send({
-      success: false,
-      message: "An error occurred during login",
-      error: error.message,
-    });
-  }
-};
+//     const isMatch = await bcrypt.compare(password, user.password);
+//     if (!isMatch) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid Phone or Password",
+//       });
+//     }
+//     // console.log(user,'user')
+//     return res.status(200).json({
+//       success: true,
+//       message: `Login successful`,
+//       user,
+//     });
+//   } catch (error) {
+//     return res.status(500).send({
+//       success: false,
+//       message: "An error occurred during login",
+//       error: error.message,
+//     });
+//   }
+// };
 
 // const registerUserweb = async (req, res) => {
 //   try {
@@ -445,6 +447,62 @@ const loginUser = async (req, res) => {
 //     });
 //   };
 
+const loginUser = async (req, res) => {
+  try {
+    const { phone, password } = req.body;
+
+    if (!phone || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Phone and Password are required",
+      });
+    }
+
+    const user = await UserModel.findOne(
+      { phone },
+      "-sesended_requests -received_requests"
+    );
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Phone or Password",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Phone or Password",
+      });
+    }
+
+    // Check if the user is admin approved
+    if (!user.isAdminApproved) {
+      return res.status(403).json({
+        // 403 Forbidden
+        success: false,
+        message: "Your account is not yet approved by the admin.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      user,
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred during login",
+      // error: error.message,  // Don't send detailed errors in production
+    });
+  }
+};
+
 const registerUserweb = async (req, res) => {
   const startTime = Date.now();
   console.log(
@@ -714,9 +772,54 @@ const updateReferralChain = async (referrerId, newUserId) => {
   }
 };
 
+// const setReferral = async (req, res) => {
+//   try {
+//     const { referrerPhone, referredPhone } = req.body; // referrer is user1, referred is user2
+
+//     // Validate input
+//     if (!referrerPhone || !referredPhone) {
+//       return res.status(400).json({
+//         message: "Both referrer and referred phone numbers are required.",
+//       });
+//     }
+
+//     // Find both users by their phone numbers
+//     const referrer = await UserModel.findOne({ phone: referrerPhone });
+//     const referred = await UserModel.findOne({ phone: referredPhone });
+
+//     if (!referrer || !referred) {
+//       return res.status(404).json({ message: "One or both users not found." });
+//     }
+
+//     // Check if referred user already has a referrer
+//     if (referred.referredBy.length > 0) {
+//       return res
+//         .status(400)
+//         .json({ message: "Referred user already has a referrer." });
+//     }
+
+//     referred.referredBy = [referrer._id];
+//     await referred.save();
+
+//     referrer.referrals.push(referred._id);
+//     await referrer.save(); // Save the referrer referrer.referrals.push(referred._id);
+
+//     return res.status(200).json({
+//       message: "Referral relationship established successfully.",
+//       referrer: referrer.name,
+//       referred: referred.name,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res
+//       .status(500)
+//       .json({ message: "An error occurred.", error: error.message });
+//   }
+// };
+
 const setReferral = async (req, res) => {
   try {
-    const { referrerPhone, referredPhone } = req.body; // referrer is user1, referred is user2
+    const { referrerPhone, referredPhone } = req.body;
 
     // Validate input
     if (!referrerPhone || !referredPhone) {
@@ -725,26 +828,43 @@ const setReferral = async (req, res) => {
       });
     }
 
-    // Find both users by their phone numbers
-    const referrer = await UserModel.findOne({ phone: referrerPhone });
-    const referred = await UserModel.findOne({ phone: referredPhone });
+    // Find both users in parallel using indexed phone numbers
+    const [referrer, referred] = await Promise.all([
+      UserModel.findOne({ phone: referrerPhone }).select("_id name").lean(),
+      UserModel.findOne({ phone: referredPhone })
+        .select("_id name referredBy")
+        .lean(),
+    ]);
 
+    // Check user existence
     if (!referrer || !referred) {
       return res.status(404).json({ message: "One or both users not found." });
     }
 
-    // Check if referred user already has a referrer
-    if (referred.referredBy.length > 0) {
+    // Check if referred already has a referrer
+    if (referred.referredBy?.length > 0) {
       return res
         .status(400)
         .json({ message: "Referred user already has a referrer." });
     }
 
-    referred.referredBy = [referrer._id];
-    await referred.save();
+    // Atomic update to set referrer only if not already set
+    const referredUpdate = await UserModel.updateOne(
+      { _id: referred._id, referredBy: { $size: 0 } },
+      { $set: { referredBy: [referrer._id] } }
+    );
 
-    referrer.referrals.push(referred._id);
-    await referrer.save(); // Save the referrer referrer.referrals.push(referred._id);
+    if (referredUpdate.modifiedCount === 0) {
+      return res
+        .status(400)
+        .json({ message: "Referred user already has a referrer." });
+    }
+
+    // Update referrer's referrals atomically
+    await UserModel.updateOne(
+      { _id: referrer._id },
+      { $push: { referrals: referred._id } }
+    );
 
     return res.status(200).json({
       message: "Referral relationship established successfully.",

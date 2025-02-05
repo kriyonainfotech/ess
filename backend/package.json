@@ -32,7 +32,7 @@
     "build": "npm install --legacy-peer-deps && next build",
     "flutter": "nodemon flutter.js",
     "run-flutter": "nodemon flutter.js",
-    "dev": "npx concurrently \"npm run start\" \"npm run flutter\" --kill-others",
+    "dev": "npx concurrently \"npm run start\" \"npm run flutter\" --kill-others-on-fail",
     "dev:web": "nodemon index.js",
     "dev:flutter": "nodemon flutter.js",
     "dev:all": "npx concurrently \"npm run dev:web\" \"npm run dev:flutter\" --kill-others"

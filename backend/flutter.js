@@ -6,7 +6,6 @@ const app = express();
 const connectDB = require("./config/db");
 const port = process.env.FLUTTER_PORT || 4000; // Use environment variable or default to 4000
 const serverType = "Flutter Backend";
-connectDB();
 const cookieParser = require("cookie-parser");
 
 const bodyParser = require("body-parser");
@@ -20,7 +19,7 @@ app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.json());
-app.use(express.urlencoded());
+app.use(express.urlencoded({ extended: true }));
 
 // Health check route
 app.get("/", (req, res) => {
@@ -46,14 +45,22 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
-app.listen(port, (err) => {
-  if (err) {
-    console.error(`[${serverType}] Error starting server:`, err);
+// Connect to database
+connectDB()
+  .then(() => {
+    // Only start server after DB connection
+    app.listen(port, (err) => {
+      if (err) {
+        console.error(`[${serverType}] Error starting server:`, err);
+        process.exit(1);
+      }
+      console.log(`[${serverType}] Server is running on port ${port}`);
+    });
+  })
+  .catch((err) => {
+    console.error("Failed to connect to database:", err);
     process.exit(1);
-  }
-  console.log(`[${serverType}] Server is running on port ${port}`);
-});
+  });
 
 // Handle uncaught exceptions
 process.on("uncaughtException", (err) => {

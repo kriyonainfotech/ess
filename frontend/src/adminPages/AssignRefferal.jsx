@@ -25,10 +25,9 @@ const AssignReferrals = () => {
         referrerPhone,
         referredPhone,
       }, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        withCredentials: true,
       });
+      console.log(response, 'response of set refferal');
       if (response.status === 200) {
         setMessage('Referral assigned successfully');
         setReferrerPhone('');
