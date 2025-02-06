@@ -1,208 +1,177 @@
 const UserModel = require("../model/user");
 
-const getUsersByBCategory = async (req, res) => {
-  try {
-    const { category, city, status, isAdminApproved, sortByRating } = req.body;
-    console.log("Request body:", req.body);
-
-    // Let's check users at each filter step to see where they're getting filtered out
-    const filter = {};
-    let usersAfterEachFilter = [];
-
-    // 1. First check just category
-    if (category) {
-      filter.businessCategory = { $regex: new RegExp(category, "i") };
-      usersAfterEachFilter = await UserModel.find({
-        businessCategory: filter.businessCategory,
-      }).select(
-        "name phone address businessCategory profilePic userstatus ratings averageRating isAdminApproved"
-      );
-      console.log("Users after category filter:", usersAfterEachFilter.length);
-      console.log(
-        "User details:",
-        usersAfterEachFilter.map((u) => ({
-          name: u.name,
-          category: u.businessCategory,
-          city: u?.address?.city,
-          status: u.userstatus,
-          isAdminApproved: u.isAdminApproved,
-        }))
-      );
-
-      // If no users found with this category, return early
-      if (usersAfterEachFilter.length === 0) {
-        return res.status(200).json({
-          success: true,
-          message: "No service providers available for this category",
-          count: 0,
-          users: [],
-        });
-      }
-    }
-
-    // 2. Add city filter
-    if (city) {
-      filter["address.city"] = { $regex: new RegExp(city, "i") };
-      usersAfterEachFilter = await UserModel.find({
-        businessCategory: filter.businessCategory,
-        "address.city": filter["address.city"],
-      }).select(
-        "name phone address businessCategory profilePic userstatus ratings averageRating isAdminApproved"
-      );
-
-      // If no users found after city filter
-      if (usersAfterEachFilter.length === 0) {
-        return res.status(200).json({
-          success: true,
-          message: `No service providers available in ${city} for this category`,
-          count: 0,
-          users: [],
-        });
-      }
-    }
-
-    // 3. Add status filter
-    if (status) {
-      const validStatuses = ["available", "unavailable"];
-      if (!validStatuses.includes(status)) {
-        return res.status(400).json({
-          success: false,
-          message: `Status must be one of: ${validStatuses.join(", ")}`,
-        });
-      }
-      filter.userstatus = status;
-      usersAfterEachFilter = await UserModel.find({
-        ...filter,
-      }).select(
-        "name phone address businessCategory profilePic userstatus ratings averageRating isAdminApproved"
-      );
-
-      // If no users found after status filter
-      if (usersAfterEachFilter.length === 0) {
-        return res.status(200).json({
-          success: true,
-          message: `No ${status} service providers found for this category`,
-          count: 0,
-          users: [],
-        });
-      }
-    }
-
-    // 4. Add admin approval filter
-    if (isAdminApproved !== undefined) {
-      filter.isAdminApproved = isAdminApproved;
-      usersAfterEachFilter = await UserModel.find(filter).select(
-        "name phone address businessCategory profilePic userstatus ratings averageRating isAdminApproved"
-      );
-
-      // If no users found after admin approval filter
-      if (usersAfterEachFilter.length === 0) {
-        return res.status(200).json({
-          success: true,
-          message: "No approved service providers available for this category",
-          count: 0,
-          users: [],
-        });
-      }
-    }
-
-    // Sort users if requested
-    if (sortByRating && usersAfterEachFilter.length > 0) {
-      if (!["asc", "desc"].includes(sortByRating)) {
-        return res.status(400).json({
-          success: false,
-          message: "sortByRating must be either 'asc' or 'desc'",
-        });
-      }
-
-      usersAfterEachFilter.sort((a, b) => {
-        const ratingA = a.averageRating || 0;
-        const ratingB = b.averageRating || 0;
-        return sortByRating === "desc" ? ratingB - ratingA : ratingA - ratingB;
-      });
-    }
-
-    // Return success response with users
-    return res.status(200).json({
-      success: true,
-      message:
-        usersAfterEachFilter.length > 0
-          ? "Service providers fetched successfully"
-          : "No service providers available",
-      count: usersAfterEachFilter.length,
-      filters: {
-        category,
-        city,
-        status,
-        isAdminApproved,
-        sortByRating,
-      },
-      users: usersAfterEachFilter,
-    });
-  } catch (error) {
-    console.error("Error in getUsersByBCategory:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Unable to fetch service providers. Please try again later.",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
-  }
-};
-
 // const getUsersByBCategory = async (req, res) => {
-//   const { category, city, status, isAdminApproved, sortByRating } = req.body;
-
-//   console.log("Received category:", category); // Debug: Log the received category
-//   console.log("Received city:", city); // Debug: Log the received city
-
-//   const filter = {};
-
-//   if (category) {
-//     filter.businessCategory = { $in: [category] }; // Exact match for category
-//   }
-
-//   if (city) {
-//     filter["address.city"] = city; // Exact match for city
-//   }
-
-//   if (status) {
-//     filter.userstatus = status; // Filter by user status
-//   }
-
-//   if (isAdminApproved !== undefined) {
-//     filter.isAdminApproved = isAdminApproved; // Filter by admin approval status
-//   }
-
 //   try {
-//     console.log("Filter object:", filter);
-
-//     // Fetch only the required fields
-//     // let users = await UserModel.find(filter);
-//     let users = await UserModel.find(filter).select(
-//       "name phone address businessCategory profilePic userstatus ratings averageRating"
-//     );
-
-//     console.log("Fetched users:", users);
-
-//     // Sort by averageRating if requested
-//     if (sortByRating === "desc") {
-//       users.sort((a, b) => b.averageRating - a.averageRating);
-//     } else if (sortByRating === "asc") {
-//       users.sort((a, b) => a.averageRating - b.averageRating);
+//     const { category, city, sortByRating } = req.body;
+//     console.log(category, city, sortByRating);
+//     // Validate input
+//     if (!category || !city) {
+//       return res
+//         .status(400)
+//         .json({ message: "Category and City are required." });
 //     }
 
-//     res.status(200).send({
-//       success: true,
-//       message: "Users fetched successfully",
-//       users,
-//     });
+//     // Query users based on filters
+//     const users = await UserModel.find({
+//       businessCategory: category, // Matches the category
+//       "address.city": city, // Matches the city
+//       userstatus: "available", // User must be available
+//       isAdminApproved: true, // Must be admin approved
+//     }).sort({ averageRating: sortByRating === "desc" ? -1 : 1 });
+
+//     res.status(200).json(users);
 //   } catch (error) {
-//     console.log("Error fetching filtered users:", error);
-//     res
-//       .status(500)
-//       .send({ success: false, message: "Internal server error", error });
+//     console.log(error);
+//     res.status(500).json({ message: "Server error", error: error.message });
 //   }
+
+//   // try {
+//   //   const { category, city, status, isAdminApproved, sortByRating } = req.body;
+
+//   //   console.log("[DEBUG] Request body:", {
+//   //     category,
+//   //     city,
+//   //     status,
+//   //     isAdminApproved,
+//   //     sortByRating,
+//   //   });
+
+//   //   // Build filter object
+//   //   const filter = {
+//   //     isAdminApproved: true,
+//   //   };
+
+//   //   // Add category filter if provided - Fix RegExp construction
+//   //   if (category) {
+//   //     filter.businessCategory = category; // Simple exact match first
+//   //   }
+
+//   //   // Add city filter if provided - Fix RegExp construction
+//   //   if (city) {
+//   //     filter["address.city"] = city; // Simple exact match first
+//   //   }
+
+//   //   // Add status filter if provided
+//   //   if (status) {
+//   //     filter.userstatus = status;
+//   //   }
+
+//   //   console.log("[DEBUG] Final filter:", JSON.stringify(filter, null, 2));
+
+//   //   // Add timeout to the query
+//   //   const users = await UserModel.find(filter)
+//   //     .select(
+//   //       "name phone address businessCategory profilePic userstatus ratings averageRating"
+//   //     )
+//   //     .lean()
+//   //     .maxTimeMS(10000) // 10 second timeout
+//   //     .exec();
+
+//   //   console.log("[DEBUG] Found users count:", users.length);
+
+//   //   if (users.length === 0) {
+//   //     // Diagnostic queries with timeouts
+//   //     const [totalUsers, usersWithCategory] = await Promise.all([
+//   //       UserModel.countDocuments().maxTimeMS(5000),
+//   //       category
+//   //         ? UserModel.countDocuments({ businessCategory: category }).maxTimeMS(
+//   //             5000
+//   //           )
+//   //         : Promise.resolve(0),
+//   //     ]);
+
+//   //     console.log("[DEBUG] Total users in database:", totalUsers);
+//   //     if (category) {
+//   //       console.log(
+//   //         "[DEBUG] Users with category:",
+//   //         category,
+//   //         ":",
+//   //         usersWithCategory
+//   //       );
+//   //     }
+//   //   }
+
+//   //   // Sort users if requested
+//   //   let sortedUsers = [...users];
+//   //   if (sortByRating) {
+//   //     sortedUsers.sort((a, b) => {
+//   //       const ratingA = a.averageRating || 0;
+//   //       const ratingB = b.averageRating || 0;
+//   //       return sortByRating === "desc" ? ratingB - ratingA : ratingA - ratingB;
+//   //     });
+//   //   }
+
+//   //   return res.status(200).json({
+//   //     success: true,
+//   //     message:
+//   //       users.length > 0
+//   //         ? "Users fetched successfully"
+//   //         : "No users found for the given criteria",
+//   //     users: sortedUsers,
+//   //     meta: {
+//   //       total: sortedUsers.length,
+//   //       filter: filter,
+//   //       category,
+//   //       city,
+//   //     },
+//   //   });
+//   // } catch (error) {
+//   //   console.error("[ERROR] Failed to fetch users:", error);
+//   //   return res.status(500).json({
+//   //     success: false,
+//   //     message: "Failed to fetch users",
+//   //     error: error.message,
+//   //   });
+//   // }
 // };
+
+const getUsersByBCategory = async (req, res) => {
+  try {
+    const { category, city } = req.body;
+    console.log("📝 Category:", category, "🏙️ City:", city);
+
+    // Validate input
+    if (!category || !city) {
+      console.log("❌ Missing category or city");
+      return res
+        .status(400)
+        .json({ message: "Category and City are required." });
+    }
+    console.log("✅ Input validated: category and city are present");
+
+    // Query users based on category and city
+    console.log("🔍 Querying users in category:", category, "and city:", city);
+    const users = await UserModel.find({
+      businessCategory: category, // Matches the category
+      "address.city": city, // Matches the city
+      userstatus: "available", // Only available users
+      isAdminApproved: true, // Only admin-approved users
+    }).select(
+      "_id name email phone businessCategory profilePic ratings businessName businessAddress averageRating"
+    ); // Only select the _id field
+
+    console.log("Users count:", users.length);
+    if (users.length === 0) {
+      console.log("⚠️ No users found matching the criteria");
+    } else if (users.length !== 0) {
+      users.forEach((user) => {
+        console.log(user.name); // Log the name of each user
+      });
+    } else {
+      console.log("✅ Found", users.length, "users matching the criteria");
+    }
+
+    // Send response with fetched users
+    res.status(200).json({
+      success: true,
+      message: "Users fetched successfully 🎉",
+      users,
+    });
+  } catch (error) {
+    console.error("💥 Error fetching users:", error);
+    res.status(500).json({ message: "Server error 🛠️", error: error.message });
+  }
+};
 
 module.exports = {
   getUsersByBCategory,

@@ -84,7 +84,11 @@ const ServiceDetail = () => {
       fetchData(category, loggedInUser.address.city);
     }
   }, [category, loggedInUser?.address?.city]);
-
+  useEffect(() => {
+    return () => {
+      setService([]); // Clear service list on unmount
+    };
+  }, []);
   // Update logged-in user
   useEffect(() => {
     if (user) {

@@ -204,9 +204,113 @@ const sentRequest = async (req, res) => {
 //   }
 // };
 
+// const sentRequestMobile = async (req, res) => {
+//   try {
+//     console.log("🔵 Received request to send a request:", req.body);
+
+//     const { senderId, receiverId } = req.body;
+
+//     if (!senderId || !receiverId) {
+//       console.log("❌ Missing sender or receiver ID.");
+//       return res.status(400).send({
+//         success: false,
+//         message: "Sender or receiver ID is missing.",
+//       });
+//     }
+
+//     if (senderId === receiverId) {
+//       console.log("⚠️ Sender and receiver IDs are the same.");
+//       return res.status(400).send({
+//         success: false,
+//         message: "You cannot send a request to yourself.",
+//       });
+//     }
+
+//     console.log("🔍 Fetching sender and receiver details...");
+//     const sender = await User.findById(senderId).select("_id");
+//     const receiver = await User.findById(receiverId).select("_id");
+
+//     if (!sender || !receiver) {
+//       console.log("❌ Sender or receiver not found.");
+//       return res.status(404).send({
+//         success: false,
+//         message: "Sender or receiver not found.",
+//       });
+//     }
+
+//     console.log("📌 Checking if a request already exists...");
+
+//     // Check if sender has already sent a pending request to receiver
+//     const existingSentRequest = sender.sended_requests.find(
+//       (req) => req.user.toString() === receiverId && req.status === "pending"
+//     );
+
+//     // Check if receiver has already received a pending request from sender
+//     const existingReceivedRequest = receiver.received_requests.find(
+//       (req) => req.user.toString() === senderId && req.status === "pending"
+//     );
+
+//     if (existingSentRequest || existingReceivedRequest) {
+//       console.log("⚠️ Request already exists. Blocking duplicate request.");
+//       return res.status(400).send({
+//         success: false,
+//         message: "Request already sent.",
+//       });
+//     }
+
+//     console.log("✅ Request is new. Proceeding with update...");
+
+//     // Add request to sender's sent list
+//     console.log(`📤 Updating sender (${senderId}) sended_requests...`);
+//     await User.findByIdAndUpdate(senderId, {
+//       $addToSet: { sended_requests: { user: receiver._id, status: "pending" } },
+//     });
+
+//     // Add request to receiver's received list
+//     console.log(`📥 Updating receiver (${receiverId}) received_requests...`);
+//     await User.findByIdAndUpdate(receiverId, {
+//       $addToSet: { received_requests: { user: sender._id, status: "pending" } },
+//     });
+
+//     // Sending notification if receiver has an FCM token
+//     if (receiver.fcmToken) {
+//       console.log("📩 Sending push notification...");
+//       const Notification = {
+//         senderName: sender.name,
+//         fcmToken: receiver.fcmToken,
+//         title: "New Work",
+//         message: `${sender.name} has sent you a request.`,
+//         receiverId: receiver._id,
+//       };
+
+//       await sendNotification(Notification);
+//       console.log("✅ Notification sent successfully.");
+//     } else {
+//       console.log("⚠️ Receiver has no FCM token. Skipping notification.");
+//     }
+
+//     console.log("🎉 Request sent successfully!");
+
+//     return res.status(200).send({
+//       success: true,
+//       message: "Request sent successfully.",
+//       sender,
+//       receiver,
+//     });
+//   } catch (error) {
+//     console.error("❌ Error in request process:", error);
+//     return res.status(500).send({
+//       success: false,
+//       message: "An error occurred during the request.",
+//       error: error.message,
+//     });
+//   }
+// };
 const sentRequestMobile = async (req, res) => {
   try {
     const { senderId, receiverId } = req.body;
+
+    console.log("🔍 Fetching sender and receiver details...");
 
     if (!senderId || !receiverId) {
       return res.status(400).send({
@@ -222,39 +326,102 @@ const sentRequestMobile = async (req, res) => {
       });
     }
 
-    const sender = await User.findById(senderId);
-    const receiver = await User.findById(receiverId);
+    // Fetch only _id fields
+    const sender = await User.findById(senderId).select("_id name");
+    const receiver = await User.findById(receiverId).select("_id name");
 
-    if (!sender || !receiver) {
+    // Debugging the fetched users
+    console.log("📌 Sender:", sender);
+    console.log("📌 Receiver:", receiver);
+    console.log("🔍 Fetching sender and receiver details...");
+
+    // Check if sender exists
+    if (!sender) {
+      console.error("❌ Sender not found!");
       return res.status(404).send({
         success: false,
-        message: "Sender or receiver not found.",
+        message: "Sender not found.",
       });
     }
 
-    const existingSentRequest = sender.sended_requests.find(
-      (req) => req.user.toString() === receiverId && req.status === "pending"
-    );
+    // Ensure sender.sended_requests is an array
+    if (!Array.isArray(sender.sended_requests)) {
+      console.warn(
+        "⚠️ 'sended_requests' not found. Initializing as an empty array."
+      );
+      sender.sended_requests = []; // Initialize it if missing
+    }
+
+    console.log("📌 Sender's sent requests:", sender.sended_requests);
+    console.log("📌 Receiver ID:", receiverId);
+
+    // Check if a pending request already exists
+    const existingSentRequest = sender.sended_requests.find((req) => {
+      console.log("📌 Checking request:", req);
+      console.log(
+        "📌 Condition being checked:",
+        req.user.toString(),
+        receiverId,
+        req.status === "pending"
+      );
+      return req.user.toString() === receiverId && req.status === "pending";
+    });
 
     if (existingSentRequest) {
+      console.log("❌ Already sent request.");
       return res.status(400).send({
         success: false,
         message: "Already sent request.",
       });
     }
+
+    // Proceed with request sending...
+    console.log("✅ No existing request found. Proceeding to send request...");
+
+    // Check if receiver exists
+    if (!receiver) {
+      console.error("❌ Receiver not found!");
+      return res.status(404).send({
+        success: false,
+        message: "Receiver not found.",
+      });
+    }
+
+    // Ensure receiver.received_requests is an array
+    if (!Array.isArray(receiver.received_requests)) {
+      console.warn(
+        "⚠️ 'received_requests' not found. Initializing as an empty array."
+      );
+      receiver.received_requests = [];
+    }
+
+    console.log("📌 Receiver's received requests:", receiver.received_requests);
+    console.log("📌 Sender ID:", senderId);
 
     // Check if a pending request already exists from receiver to sender
-    const existingReceivedRequest = receiver.received_requests.find(
-      (req) => req.user.toString() === senderId && req.status === "pending"
-    );
+    const existingReceivedRequest = receiver.received_requests.find((req) => {
+      console.log("📌 Checking received request:", req);
+      console.log(
+        "📌 Condition being checked:",
+        req.user.toString(),
+        senderId,
+        req.status === "pending"
+      );
+      return req.user.toString() === senderId && req.status === "pending";
+    });
 
     if (existingReceivedRequest) {
+      console.log("❌ Already received a request from this sender.");
       return res.status(400).send({
         success: false,
         message: "Already sent request.",
       });
     }
 
+    // Proceed with request sending...
+    console.log("✅ No existing request found. Proceeding to send request...");
+
+    console.log("📌 Adding request to both users...");
     await User.findByIdAndUpdate(senderId, {
       $addToSet: { sended_requests: { user: receiver, status: "pending" } },
     });
@@ -263,6 +430,8 @@ const sentRequestMobile = async (req, res) => {
       $addToSet: { received_requests: { user: sender, status: "pending" } },
     });
 
+    console.log("📌 Sending notification...");
+
     const Notification = {
       senderName: sender.name,
       fcmToken: receiver.fcmToken,
@@ -270,8 +439,8 @@ const sentRequestMobile = async (req, res) => {
       message: `${sender.name} has sent you a request.`,
       receiverId: receiver._id, // Include the receiver's ID to store the notification
     };
-
-    await sendNotification(Notification);
+    console.log("🔵 Notification:", Notification);
+    // await sendNotification(Notification);
 
     return res.status(200).send({
       success: true,
@@ -280,7 +449,7 @@ const sentRequestMobile = async (req, res) => {
       receiver,
     });
   } catch (error) {
-    console.error(error);
+    console.error("❌ Error in request process:", error);
     return res.status(500).send({
       success: false,
       message: "An error occurred during the request.",

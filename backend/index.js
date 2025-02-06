@@ -4,7 +4,7 @@ dotenv.config();
 const express = require("express");
 const app = express();
 const connectDB = require("./config/db");
-const port = process.env.PORT || 3000;
+const port = 4000;
 const serverType = "Web Backend";
 connectDB();
 const cookieParser = require("cookie-parser");

@@ -12,7 +12,7 @@ import { UserContext } from '../UserContext';
 // Lazy load components
 const UserDropdown = React.lazy(() => import('../components/UserDropdown'));
 const SearchBox = React.lazy(() => import('../components/SearchBox'));
-const BellNotification = React.lazy(() => import('../components/BellNotification'));
+// const BellNotification = React.lazy(() => import('../components/BellNotification'));
 
 const AdminNavbar = () => {
     const { user } = useContext(UserContext);
@@ -122,11 +122,11 @@ const AdminNavbar = () => {
                                         </ul>
                                     </div>
 
-                                    <div className='w-100 d-flex justify-content-center ps-3 justify-content-start'>
+                                    {/* <div className='w-100 d-flex justify-content-center ps-3 justify-content-start'>
                                         <Suspense fallback={<div>Loading Notifications...</div>}>
                                             <BellNotification />
                                         </Suspense>
-                                    </div>
+                                    </div> */}
                                     <div className='w-full d-none d-lg-flex'>
                                         {
                                             auth ? (

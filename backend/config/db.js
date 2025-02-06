@@ -4,14 +4,33 @@ require("dotenv").config();
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MongoDB, {
-      serverSelectionTimeoutMS: 60000, // 60 seconds
-      socketTimeoutMS: 60000, // 60 seconds for idle connections
-      connectTimeoutMS: 30000, // 30 seconds for initial connection
-      maxPoolSize: 20, // Adjust max connection pool size
+      serverSelectionTimeoutMS: 20000,
+      socketTimeoutMS: 30000,
+      connectTimeoutMS: 20000,
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      retryWrites: true,
+      retryReads: true,
+      w: "majority",
     });
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+
+    console.log(`[INFO] MongoDB Connected: ${conn.connection.host}`);
+
+    // Handle connection errors
+    mongoose.connection.on("error", (err) => {
+      console.error("[ERROR] MongoDB connection error:", err);
+    });
+
+    mongoose.connection.on("disconnected", () => {
+      console.log("[INFO] MongoDB disconnected. Attempting to reconnect...");
+    });
+
+    // Add reconnection logic
+    mongoose.connection.on("reconnected", () => {
+      console.log("[INFO] MongoDB reconnected successfully");
+    });
   } catch (error) {
-    console.error("MongoDB connection error:", error);
+    console.error("[ERROR] MongoDB connection failed:", error);
     process.exit(1);
   }
 };
