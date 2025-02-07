@@ -60,7 +60,15 @@ const storage = new CloudinaryStorage({
 const upload = multer({
   storage: storage,
 });
-router.post("/registerUser", registerUser);
+router.post(
+  "/registerUser",
+  upload.fields([
+    { name: "frontAadhar", maxCount: 1 },
+    { name: "backAadhar", maxCount: 1 },
+    { name: "profilePic", maxCount: 1 },
+  ]),
+  registerUser
+);
 router.post("/loginUser", loginUser);
 router.post(
   "/registerUserweb",
