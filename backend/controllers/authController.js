@@ -8,75 +8,131 @@ const { v4: uuidv4 } = require("uuid");
 const { distributeReferralRewards } = require("../services/referralService");
 const { sendNotification } = require("./sendController");
 
+const getPublicIdFromUrl = (url) => {
+  const regex = /\/(?:v\d+\/)?([^\/]+)\/([^\/]+)\.[a-z]+$/;
+  const match = url.match(regex);
+  if (match) {
+    return `${match[1]}/${match[2]}`; // captures the folder and file name without versioning or extension
+  }
+  return null;
+};
+
 const registerUser = async (req, res) => {
   const startTime = Date.now();
   console.log(`[${new Date().toISOString()}] Starting registerUser request`);
 
   try {
-    console.log("Request body:", req.body);
+    // Get uploaded files
+    const { files } = req;
+    console.log("[DEBUG] Uploaded files:", files);
+
+    // Validate file uploads
+    if (
+      !files?.frontAadhar?.[0] ||
+      !files?.backAadhar?.[0] ||
+      !files?.profilePic?.[0]
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Please upload all required documents (Front Aadhar, Back Aadhar, and Profile Picture)",
+      });
+    }
+
     const {
       name,
       email,
       password,
-      confirmpassword,
       phone,
-      address,
       businessCategory,
       businessName,
       businessAddress,
+      businessDetaile,
+      fcmToken,
+      referralCode,
+      // Address fields directly from body
+      area,
+      city,
+      state,
+      country,
+      pincode,
     } = req.body;
 
-    // Log time taken for request parsing
-    console.log(`Request parsing took: ${Date.now() - startTime}ms`);
+    console.log("[DEBUG] Request body:", req.body);
 
-    // Validation check timing
-    const validationStart = Date.now();
-    if (
-      !name ||
-      !email ||
-      !password ||
-      // !confirmpassword ||
-      !phone ||
-      !address
-    ) {
-      console.log("Validation failed - missing fields");
-      return res.status(400).send({
+    // Construct address object directly
+    const address = {
+      area,
+      city,
+      state,
+      country,
+      pincode,
+    };
+
+    // Validate address fields
+    const requiredAddressFields = [
+      "area",
+      "city",
+      "state",
+      "country",
+      "pincode",
+    ];
+    const missingFields = requiredAddressFields.filter(
+      (field) => !address[field]
+    );
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
         success: false,
-        message: "Please fill all the fields",
+        message: `Missing required address fields: ${missingFields.join(", ")}`,
       });
     }
 
-    if (password !== confirmpassword) {
-      console.log("Validation failed - password mismatch");
-      return res.status(400).send({
+    // Basic validation
+    if (!name || !email || !password || !phone) {
+      return res.status(400).json({
         success: false,
-        message: "Password and Confirm Password don't match",
+        message: "Please fill all required fields",
       });
     }
-    console.log(`Validation checks took: ${Date.now() - validationStart}ms`);
 
-    // Database check timing
-    const dbCheckStart = Date.now();
-    const userExist = await UserModel.findOne({ email: email }).lean();
-    console.log(`Database check took: ${Date.now() - dbCheckStart}ms`);
+    // Check for existing user
+    const [emailExists, phoneExists] = await Promise.all([
+      UserModel.exists({ email }).lean(),
+      UserModel.exists({ phone }).lean(),
+    ]);
 
-    if (userExist) {
-      console.log("User already exists:", email);
-      return res.status(400).send({
+    if (emailExists) {
+      return res.status(400).json({
         success: false,
         message: "Email already exists",
       });
     }
 
-    // Password hashing timing
-    const hashStart = Date.now();
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    console.log(`Password hashing took: ${Date.now() - hashStart}ms`);
+    if (phoneExists) {
+      return res.status(400).json({
+        success: false,
+        message: "Phone number already exists",
+      });
+    }
 
-    // User creation timing
-    const createStart = Date.now();
+    // Handle referral
+    let referrer = null;
+    if (referralCode) {
+      referrer = await UserModel.findOne({ phone: referralCode })
+        .select("_id phone walletBalance")
+        .lean();
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Generate unique ID
+    const uniqueId = await generateUniqueId();
+
+    // Create user with all fields
     const user = new UserModel({
+      userId: uniqueId,
       name,
       email,
       password: hashedPassword,
@@ -85,38 +141,91 @@ const registerUser = async (req, res) => {
       businessCategory,
       businessName,
       businessAddress,
+      businessDetaile,
+      fcmToken,
+      frontAadhar: files.frontAadhar[0].path,
+      backAadhar: files.backAadhar[0].path,
+      profilePic: files.profilePic[0].path,
+      referralCode: uuidv4(),
+      referredBy: referrer ? [referrer._id] : [],
+      isAdminApproved: false,
+      walletBalance: 0,
     });
 
-    // Save timing
-    const saveStart = Date.now();
-    await user.save();
-    console.log(`Database save took: ${Date.now() - saveStart}ms`);
+    // Use transaction for referral updates
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    const totalTime = Date.now() - startTime;
-    console.log(`Total registration time: ${totalTime}ms`);
+    try {
+      await user.save({ session });
 
-    return res.status(200).send({
+      // Update referrer if exists
+      if (referrer) {
+        await UserModel.findByIdAndUpdate(
+          referrer._id,
+          {
+            $push: { referrals: user._id },
+          },
+          { session }
+        );
+
+        // Send notification to referrer
+        await sendNotification({
+          userId: referrer._id,
+          title: "New Referral",
+          message: `${name} has registered using your referral code!`,
+          fcmToken: referrer.fcmToken,
+        });
+      }
+
+      await session.commitTransaction();
+    } catch (error) {
+      // If there's an error, delete uploaded files
+      try {
+        const filesToDelete = [
+          files.frontAadhar[0].path,
+          files.backAadhar[0].path,
+          files.profilePic[0].path,
+        ];
+
+        for (const filePath of filesToDelete) {
+          const publicId = getPublicIdFromUrl(filePath);
+          if (publicId) {
+            await cloudinary.uploader.destroy(publicId);
+          }
+        }
+      } catch (cleanupError) {
+        console.error(
+          "[ERROR] Failed to cleanup uploaded files:",
+          cleanupError
+        );
+      }
+
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
+
+    console.log(`Registration completed in ${Date.now() - startTime}ms`);
+
+    return res.status(200).json({
       success: true,
-      message: "User registered successfully",
-      user: user,
-      timing: {
-        total: totalTime,
-        validation: Date.now() - validationStart,
-        dbCheck: Date.now() - dbCheckStart,
-        hashing: Date.now() - hashStart,
-        saving: Date.now() - saveStart,
+      message: "Registration successful! Awaiting admin approval.",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        referralCode: user.referralCode,
+        referredBy: referrer?.phone || null,
       },
     });
   } catch (error) {
-    const errorTime = Date.now() - startTime;
-    console.error(`Error after ${errorTime}ms:`, error);
-    return res.status(500).send({
+    console.error("[ERROR] Registration failed:", error);
+    return res.status(500).json({
       success: false,
-      message: "An error occurred during registration",
-      error: error.message,
-      timing: {
-        errorOccurredAfter: errorTime,
-      },
+      message: "Registration failed. Please try again.",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
@@ -272,11 +381,11 @@ const registerUserweb = async (req, res) => {
             : "Phone number already exists",
       });
     }
-
+    const uniqueId = await generateUniqueId();
     // 6. Create new user
     console.log("[INFO] 🆕 Creating new user...");
     const user = new UserModel({
-      userId: crypto.randomBytes(8).toString("hex"),
+      userId: uniqueId,
       name,
       email,
       password: hashedPassword,
