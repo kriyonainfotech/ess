@@ -4,7 +4,7 @@ dotenv.config();
 const express = require("express");
 const app = express();
 const connectDB = require("./config/db");
-const port = process.env.FLUTTER_PORT || 4000; // Use environment variable or default to 4000
+const port = 3000; // Use environment variable or default to 4000
 const serverType = "Flutter Backend";
 const cookieParser = require("cookie-parser");
 

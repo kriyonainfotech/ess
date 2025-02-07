@@ -49,18 +49,11 @@ const addbanner = async (req, res) => {
 
 const addBannerMobile = async (req, res) => {
   try {
-    const { userId } = req.body; // Extract user ID from the request body
-    const imageUrl = req?.file ? req?.file?.path : null; // Get the uploaded image URL
-
-    // Validate userId
-    if (!userId) {
-      return res.status(400).send({
-        success: false,
-        message: "User ID is required",
-      });
-    }
-
+    // const imageUrl = req.file.path;
+    const imageUrl = req.body.imageUrl;
+    const { userId } = req.body; // Extract user ID from the request
     // Check for an existing banner for the user
+    console.log(imageUrl, "image bannrer");
     const existingBanner = await Banner.findOne({ userId });
     if (existingBanner) {
       return res.status(400).send({
@@ -80,7 +73,7 @@ const addBannerMobile = async (req, res) => {
       banner: newBanner,
     });
   } catch (error) {
-    console.error(error);
+    console.log(error);
     return res.status(500).send({
       success: false,
       message: "An error occurred while adding the banner",

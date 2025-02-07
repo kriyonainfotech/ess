@@ -12,8 +12,11 @@ const {
   receivedRequestMobile,
   cancelRequestMobile,
   workDoneMobile,
+  getSendedRequestsMobile,
+  getReceivedRequestsMobile,
 } = require("../controllers/requestController");
 const { verifyToken } = require("../middleware/auth");
+
 const {
   getNotifications,
   deleteNotification,
@@ -43,5 +46,8 @@ router.post("/getNotificationsMobile", getNotificationsMobile);
 router.delete("/deleteNotification", verifyToken, deleteNotification);
 
 router.delete("/deleteRequest", deleteRequest);
+
+router.post("/getSendedRequestsMobile", getSendedRequestsMobile);
+router.post("/getReceivedRequestsMobile", getReceivedRequestsMobile);
 
 module.exports = router;
