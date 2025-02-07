@@ -35,7 +35,7 @@ const registerUser = async (req, res) => {
       !name ||
       !email ||
       !password ||
-      !confirmpassword ||
+      // !confirmpassword ||
       !phone ||
       !address
     ) {

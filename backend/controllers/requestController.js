@@ -1058,7 +1058,8 @@ const getUserRequests = async (req, res) => {
   console.log("[INFO] 📥 Fetching user requests...");
 
   try {
-    const userId = req.user?.id; // Ensure req.user exists
+    // const userId = req.user?.id; // Ensure req.user exists
+    const { userId } = req.body; // Ensure req.user exists
 
     if (!userId) {
       console.warn("[WARN] ⚠️ Missing userId in request.");
@@ -1070,8 +1071,16 @@ const getUserRequests = async (req, res) => {
 
     console.log(`[INFO] 🔎 Fetching requests for userId: ${userId}`);
 
-    // Fetch user and populate requests
-    const user = await User.findById(userId).select("sended_requests").lean();
+    // Fetch user with only necessary fields for sent & received requests
+    const user = await User.findById(userId)
+      .select("sended_requests received_requests")
+      .populate({
+        path: "sended_requests.user received_requests.user",
+        select:
+          "name phone email profilePic address businessCategory businessName businessAddress fcmToken userstatus averageRating ratings providerAverageRating providerRatings userAverageRating userRatings businessDetaile",
+        options: { lean: true },
+      })
+      .lean();
 
     if (!user) {
       console.warn(`[WARN] ❌ User with ID ${userId} not found.`);
@@ -1081,25 +1090,64 @@ const getUserRequests = async (req, res) => {
       });
     }
 
-    // Manually extract user details from sended_requests
-    // user.sended_requests = user.sended_requests.map((req) => ({
-    //   ...req,
-    //   user: req.user ? { name: req.user.name, email: req.user.email } : null,
-    // }));
+    // Format sent requests
+    const sendedRequests =
+      user.sended_requests?.map((req) => ({
+        _id: req.user?._id,
+        name: req.user?.name,
+        phone: req.user?.phone,
+        email: req.user?.email,
+        profilePic: req.user?.profilePic,
+        address: req.user?.address,
+        businessCategory: req.user?.businessCategory,
+        businessName: req.user?.businessName,
+        businessAddress: req.user?.businessAddress,
+        fcmToken: req.user?.fcmToken,
+        userstatus: req.user?.userstatus,
+        averageRating: req.user?.averageRating,
+        ratings: req.user?.ratings,
+        providerAverageRating: req.user?.providerAverageRating,
+        providerRatings: req.user?.providerRatings,
+        userAverageRating: req.user?.userAverageRating,
+        userRatings: req.user?.userRatings,
+        businessDetaile: req.user?.businessDetaile,
+        status: req.status,
+        date: req.date,
+        providerrating: req.providerrating,
+      })) || [];
 
-    // // Manually extract user details from received_requests
-    // user.received_requests = user.received_requests.map((req) => ({
-    //   ...req,
-    //   user: req.user ? { name: req.user.name, email: req.user.email } : null,
-    // }));
-
-    console.log(user, "user");
+    // Format received requests
+    const receivedRequests =
+      user.received_requests?.map((req) => ({
+        _id: req.user?._id,
+        name: req.user?.name,
+        phone: req.user?.phone,
+        email: req.user?.email,
+        profilePic: req.user?.profilePic,
+        address: req.user?.address,
+        businessCategory: req.user?.businessCategory,
+        businessName: req.user?.businessName,
+        businessAddress: req.user?.businessAddress,
+        fcmToken: req.user?.fcmToken,
+        userstatus: req.user?.userstatus,
+        averageRating: req.user?.averageRating,
+        ratings: req.user?.ratings,
+        providerAverageRating: req.user?.providerAverageRating,
+        providerRatings: req.user?.providerRatings,
+        userAverageRating: req.user?.userAverageRating,
+        userRatings: req.user?.userRatings,
+        businessDetaile: req.user?.businessDetaile,
+        status: req.status,
+        date: req.date,
+        providerrating: req.providerrating,
+      })) || [];
 
     console.log(`[INFO] ✅ Requests retrieved successfully.`);
     return res.status(200).json({
       success: true,
-      sendedRequests: user.sended_requests || [],
-      receivedRequests: user.received_requests || [],
+      message: "Requests retrieved successfully",
+      sendedRequests,
+      receivedRequests,
     });
   } catch (error) {
     console.error("[ERROR] ❌ Failed to fetch requests:", error);
