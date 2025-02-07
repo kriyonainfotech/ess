@@ -1058,8 +1058,8 @@ const getUserRequests = async (req, res) => {
   console.log("[INFO] 📥 Fetching user requests...");
 
   try {
-    // const userId = req.user?.id; // Ensure req.user exists
-    const { userId } = req.body; // Ensure req.user exists
+    const userId = req.user?.id; // Ensure req.user exists
+    // const{ userId} = req.body; // Ensure req.user exists
 
     if (!userId) {
       console.warn("[WARN] ⚠️ Missing userId in request.");

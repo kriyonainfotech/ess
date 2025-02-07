@@ -200,64 +200,6 @@ const AllUsers = () => {
       <AdminHeader />
       <AdminSidebar />
       <div className="my-32">
-        {/* <section>
-          <div className="container-fluid">
-            <div className="row">
-              <div className="col-12">
-                <div className="col-12 col-md-4">
-                  <div className='flex '>
-                    <label htmlFor="role" className="form-label">Select filter</label>
-                    <select
-                      id="role"
-                      className="form-select"
-                      value={filter}
-                      onChange={(e) => setFilter(e.target.value)}
-                    >
-                      <option value="">All</option>
-                      <option value="A-Z">A-Z</option>
-                      <option value="Z-A">Z-A</option>
-                      <option value="date">DATE</option>
-                      <option value="category">Category</option>
-                    </select>
-                  </div>
-                  {filter === 'date' && (
-                    <div className="mt-3">
-                      <label className="form-label">Select Date</label>
-                      <div className="input-group">
-                        <DatePicker
-                          selected={selectedDate}
-                          onChange={(date) => setSelectedDate(date)}
-                          dateFormat="yyyy-MM-dd"
-                          className="form-control"
-                        />
-                        <span className="input-group-text">
-                          <MdDateRange />
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                  {filter === 'category' && (
-                    <div className="mt-3">
-                      <label className="form-label">Select Category</label>
-                      <select
-                        className="form-select"
-                        value={selectedCategory}
-                        onChange={(e) => setSelectedCategory(e.target.value)}
-                      >
-                        <option value="">All Categories</option>
-                        {categories.map((category) => (
-                          <option key={category._id} value={category.categoryName}>
-                            {category.categoryName}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section> */}
         <section className="p-4">
           <div className="container-fluid">
             <div className="row">
@@ -326,66 +268,64 @@ const AllUsers = () => {
 
         <section>
           <div className="container-fluid">
-            <div className="card bg-base-100 shadow-xl mt-2">
+            <div className="card bg-base-100 shadow-xl mt-5">
               <div className="card-header text-xl text-bold z-0 py-3">All Users</div>
-              <div className="overflow-x-auto">
-                <div className="max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-blue-800 scrollbar-track-gray-200">
-                  <table className="table table-bordered z-30 border p-5">
-                    <thead className="text-bold text-[15px] text-black z-30">
-                      <tr>
-                        <th>SrNo</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Contact</th>
-                        <th>Address</th>
-                        <th>Business Name</th>
-                        <th>Business Category</th>
-                        <th>Business Address</th>
-                        <th>ReffredBy</th>
-                        <th>Action</th>
+              <div className="table-container">
+                <table className="table table-bordered z-30 border">
+                  <thead className="text-bold text-[15px] text-black z-30 bg-gray-100">
+                    <tr>
+                      <th>SrNo</th>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Contact</th>
+                      <th>Address</th>
+                      <th>Business Name</th>
+                      <th>Business Category</th>
+                      <th>Business Address</th>
+                      <th>ReffredBy</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredUserList.reverse().map((user, index) => (
+                      <tr key={user._id} onClick={() => handleRowClick(user)}>
+                        <th>{index + 1}</th>
+                        <td>{user.name}</td>
+                        <td>{user.email}</td>
+                        <td>{user.phone}</td>
+                        <td>
+                          {`${user?.address?.area} ${user?.address?.city} ${user?.address?.state} ${user?.address?.country} ${user?.address?.pincode}`}
+                        </td>
+                        <td>{user.businessName}</td>
+                        <td>{user.businessCategory}</td>
+                        <td>{user.businessAddress}</td>
+                        <td>{user.referredBy.map((r) => {
+                          return r.name
+                        })}</td>
+                        <td className="d-flex">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteUser(user._id);
+                            }}
+                            className="btn-xl m-1 fs-3 text-primary"
+                          >
+                            <MdOutlineDeleteOutline />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/admin/editUser`, { state: user });
+                            }}
+                            className="btn-xl fs-4 text-green-500"
+                          >
+                            <FaEdit />
+                          </button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {filteredUserList.reverse().map((user, index) => (
-                        <tr key={user._id} onClick={() => handleRowClick(user)}>
-                          <th>{index + 1}</th>
-                          <td>{user.name}</td>
-                          <td>{user.email}</td>
-                          <td>{user.phone}</td>
-                          <td>
-                            {`${user?.address?.area} ${user?.address?.city} ${user?.address?.state} ${user?.address?.country} ${user?.address?.pincode}`}
-                          </td>
-                          <td>{user.businessName}</td>
-                          <td>{user.businessCategory}</td>
-                          <td>{user.businessAddress}</td>
-                          <td>{user.referredBy.map((r) => {
-                            return r.name
-                          })}</td>
-                          <td className="d-flex">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteUser(user._id);
-                              }}
-                              className="btn-xl m-1 fs-3 text-primary"
-                            >
-                              <MdOutlineDeleteOutline />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/admin/editUser`, { state: user });
-                              }}
-                              className="btn-xl fs-4 text-green-500"
-                            >
-                              <FaEdit />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

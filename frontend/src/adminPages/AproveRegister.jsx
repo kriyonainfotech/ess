@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { MdOutlineDeleteOutline, MdDateRange } from "react-icons/md";
-import { FaEdit } from "react-icons/fa";
+import { FaEdit, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
 import AdminHeader from '../admincomponents/AdminHeader';
 import AdminSidebar from '../admincomponents/AdminSidebar';
@@ -107,6 +107,7 @@ const AllUsers = () => {
                 headers: { 'Content-Type': 'application/json' },
             });
             const data = await response.data;
+            console.log(data, 'data');
             const filteredUsers = data.user
                 .filter(user => user.isAdminApproved === false)
                 .map(user => ({
@@ -214,6 +215,7 @@ const AllUsers = () => {
             return 0;
         });
 
+
     return (
         <>
             <AdminHeader />
@@ -302,8 +304,8 @@ const AllUsers = () => {
                     <div className="container-fluid">
                         <div className="card bg-base-100 shadow-xl mt-5">
                             <div className="card-header text-xl text-bold z-0 py-3">Register Users</div>
-                            <div className="overflow-x-auto">
-                                <table className="table table-bordered flex z-30 border p-5">
+                            <div className="table-container">
+                                <table className="table table-bordered z-30 border">
                                     <thead className="text-bold text-[15px] text-black z-30">
                                         <tr>
                                             <th>SrNo</th>
@@ -315,6 +317,7 @@ const AllUsers = () => {
                                             <th>Business Category</th>
                                             <th>Business Address</th>
                                             <th>Referred By</th>
+                                            <th>Payment Status</th>
                                             <th>Approve</th>
                                             <th>Action</th>
                                         </tr>
@@ -338,6 +341,23 @@ const AllUsers = () => {
                                                         user.referredBy.map(referrer => referrer.phone || 'Unknown').join(', ')
                                                     ) : (
                                                         'None'
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    {user.paymentVerified ? (
+                                                        <button className="btn btn-success btn-sm flex items-center gap-1" title="Payment Verified">
+                                                            Payment Verified
+                                                        </button>
+
+
+                                                    ) : (
+                                                        <button
+                                                            className="btn btn-danger btn-sm"
+                                                            title="Payment Not Verified"
+                                                        >
+                                                            Payment Not Verified
+                                                        </button>
+
                                                     )}
                                                 </td>
                                                 <td>

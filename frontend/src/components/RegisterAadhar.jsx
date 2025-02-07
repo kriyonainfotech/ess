@@ -88,49 +88,101 @@ const RegisterAadhar = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!frontAadhar || !backAadhar || !profilePic) {
-            alert("Please upload all required files: Front Aadhar, Back Aadhar, and Profile Picture.");
-            return; // Stop further execution if any file is missing
-        }
-
-        const formData = new FormData();
-        formData.append("name", previousData.name);
-        formData.append("email", previousData.email);
-        formData.append("phone", previousData.phone);
-        formData.append("password", previousData.password);
-        formData.append("confirmpassword", previousData.confirmpassword);
-        formData.append("address", JSON.stringify(previousData.address));
-        formData.append("businessCategory", previousData.businessCategory);
-        formData.append("businessName", previousData.businessName);
-        formData.append("businessAddress", previousData.businessAddress);
-        formData.append("businessDetaile", previousData.businessDetaile);
-        formData.append("referralCode", previousData.referralCode);
-        formData.append("fcmToken", fcmToken);
-
-        if (frontAadhar) formData.append("frontAadhar", frontAadhar);
-        if (backAadhar) formData.append("backAadhar", backAadhar);
-        if (profilePic) formData.append("profilePic", profilePic);
-
-        // for (const [key, value] of formData.entries()) {
-        //     console.log(`${key}:`, value, "dat");
-        // }
         setLoading(true);
-        try {
-            const registerResponse = await axios.post(`${backend_API}/auth/registerUserweb`,
-                formData,
-                { headers: { "Content-Type": "multipart/form-data" } }
-            );
 
-            if (registerResponse.status === 200) {
-                toast.success(registerResponse.data.message || "Registration successful! Your account is awaiting admin approval.");
-                navigate("/login");
-            } else {
-                toast.error(registerResponse?.data?.message || "Registration failed.");
+        try {
+            // Validate required fields
+            if (!frontAadhar || !backAadhar || !profilePic) {
+                toast.error("Please upload all required documents");
+                setLoading(false);
+                return;
             }
 
+            const formData = {
+                name: previousData.name,
+                email: previousData.email,
+                phone: previousData.phone,
+                password: previousData.password,
+                confirmpassword: previousData.confirmpassword,
+                address: JSON.stringify(previousData.address),
+                businessCategory: previousData.businessCategory,
+                businessName: previousData.businessName,
+                businessAddress: previousData.businessAddress,
+                businessDetaile: previousData.businessDetaile,
+                referralCode: previousData.referralCode,
+                fcmToken: fcmToken
+            };
+
+            // Add files
+            const formDataToSend = new FormData();
+            Object.keys(formData).forEach(key => {
+                formDataToSend.append(key, formData[key]);
+            });
+
+            formDataToSend.append("frontAadhar", frontAadhar);
+            formDataToSend.append("backAadhar", backAadhar);
+            formDataToSend.append("profilePic", profilePic);
+
+            const response = await axios.post(
+                `${backend_API}/auth/registerUserweb`,
+                formDataToSend,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                    },
+                }
+            );
+
+            if (response.data.success) {
+                toast.success("Registration successful! Please wait for admin approval.");
+                navigate("/login");
+            }
 
         } catch (error) {
-            console.error("Error during Registration:", error);
+            console.error("Registration error:", error);
+
+            if (error.response?.data) {
+                const errorData = error.response.data;
+
+                // Handle validation errors
+                if (errorData.errors) {
+                    errorData.errors.forEach(err => toast.error(err.msg));
+                    return;
+                }
+
+                // Handle specific error messages
+                if (errorData.message) {
+                    switch (errorData.message) {
+                        case "Email already exists":
+                            toast.error("This email is already registered. Please use a different email.");
+                            break;
+                        case "Phone number already exists":
+                            toast.error("This phone number is already registered. Please use a different number.");
+                            break;
+                        case "Invalid file type":
+                            toast.error("Please upload valid image files only (JPG, PNG)");
+                            break;
+                        case "File too large":
+                            toast.error("File size too large. Please upload smaller images");
+                            break;
+                        default:
+                            toast.error(errorData.message);
+                    }
+                    return;
+                }
+            }
+
+            // Handle network errors
+            if (!error.response) {
+                toast.error("Network error. Please check your connection and try again");
+                return;
+            }
+
+            // Handle other errors
+            toast.error("Registration failed. Please try again later");
+
+        } finally {
+            setLoading(false);
         }
     };
 

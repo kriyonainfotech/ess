@@ -133,43 +133,50 @@ const getUsersByBCategory = async (req, res) => {
     // Validate input
     if (!category || !city) {
       console.log("❌ Missing category or city");
-      return res
-        .status(400)
-        .json({ message: "Category and City are required." });
+      return res.status(400).json({
+        success: false,
+        message: "Category and City are required.",
+      });
     }
     console.log("✅ Input validated: category and city are present");
 
     // Query users based on category and city
     console.log("🔍 Querying users in category:", category, "and city:", city);
     const users = await UserModel.find({
-      businessCategory: category, // Matches the category
-      "address.city": city, // Matches the city
-      userstatus: "available", // Only available users
-      isAdminApproved: true, // Only admin-approved users
+      businessCategory: category,
+      "address.city": city,
+      userstatus: "available",
+      isAdminApproved: true,
     }).select(
       "_id name email phone businessCategory profilePic ratings businessName businessAddress averageRating"
-    ); // Only select the _id field
+    );
 
     console.log("Users count:", users.length);
+
     if (users.length === 0) {
-      console.log("⚠️ No users found matching the criteria");
-    } else if (users.length !== 0) {
-      users.forEach((user) => {
-        console.log(user.name); // Log the name of each user
+      console.log(
+        "⚠️ No service providers found in this category for your city"
+      );
+      return res.status(200).json({
+        success: true,
+        message: "No service providers found in this category for your city",
+        users: [],
       });
-    } else {
-      console.log("✅ Found", users.length, "users matching the criteria");
     }
 
     // Send response with fetched users
     res.status(200).json({
       success: true,
-      message: "Users fetched successfully 🎉",
+      message: `Found ${users.length} service provider(s) 🎉`,
       users,
     });
   } catch (error) {
     console.error("💥 Error fetching users:", error);
-    res.status(500).json({ message: "Server error 🛠️", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch service providers. Please try again.",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 

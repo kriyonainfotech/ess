@@ -58,7 +58,17 @@ export default function App() {
   return (
     <>
       <UserProvider>
-        <ToastContainer />
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+        />
         <FCMProvider>
           <Suspense fallback={
             <>

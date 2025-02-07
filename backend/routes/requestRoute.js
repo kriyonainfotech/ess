@@ -26,7 +26,7 @@ const router = express.Router();
 router.post("/sentRequest", verifyToken, sentRequest);
 router.post("/sentRequestMobile", sentRequestMobile);
 
-router.get("/getUserRequests", getUserRequests);
+router.get("/getUserRequests", verifyToken, getUserRequests);
 router.post("/getUserRequestsMobile", getUserRequestsMobile);
 
 router.get("/getAllRequests", getAllRequests);
