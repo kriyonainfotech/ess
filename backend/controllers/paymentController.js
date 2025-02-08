@@ -18,14 +18,9 @@ const CreateOrder = async (req, res) => {
       });
     }
 
-    console.log("[INFO] Creating order with Razorpay config:", {
-      keyId: process.env.RAZORPAY_KEY_ID,
-      isLive: !process.env.RAZORPAY_KEY_ID.includes("test"),
-    });
-
     const options = {
       amount: Number(amount) * 100, // Convert to paise
-      currency: "INR",
+      currency: "INR", // In CreateOrder
       receipt: crypto.randomBytes(10).toString("hex"),
     };
 
@@ -82,11 +77,132 @@ const CreateOrder = async (req, res) => {
 };
 
 // Controller to verify payment by fetching payment details using payment_id
+// const verifyPayment = async (req, res) => {
+//   try {
+//     const { payment_id, user_id } = req.body;
+//     console.log("payment_id", payment_id);
+
+//     if (!payment_id || !user_id) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Payment ID and User ID are required",
+//       });
+//     }
+
+//     // Fetch payment details from Razorpay
+//     const paymentDetails = await razorpayInstance.payments.fetch(payment_id);
+//     if (!paymentDetails) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Payment not found",
+//       });
+//     }
+
+//     // If payment is authorized, capture it
+//     if (paymentDetails.status === "authorized") {
+//       try {
+//         const capturedPayment = await razorpayInstance.payments.capture(
+//           payment_id,
+//           paymentDetails.amount
+//         );
+//         console.log(
+//           "[INFO] Payment captured successfully:",
+//           capturedPayment.id
+//         );
+
+//         // Update user payment status
+//         const expiryDate = new Date();
+//         expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+
+//         const updatedUser = await User.findByIdAndUpdate(
+//           user_id,
+//           {
+//             paymentVerified: true,
+//             paymentExpiry: expiryDate,
+//           },
+//           { new: true } // Return updated document
+//         );
+
+//         if (!updatedUser) {
+//           throw new Error("Failed to update user payment status");
+//         }
+
+//         console.log("[INFO] User payment status updated:", updatedUser._id);
+
+//         return res.status(200).json({
+//           success: true,
+//           message: "Payment captured and verified successfully",
+//           paymentDetails: capturedPayment,
+//           user: {
+//             paymentVerified: updatedUser.paymentVerified,
+//             paymentExpiry: updatedUser.paymentExpiry,
+//           },
+//         });
+//       } catch (error) {
+//         console.error("[ERROR] Payment capture/update failed:", error);
+//         return res.status(500).json({
+//           success: false,
+//           message: "Failed to capture payment or update user status",
+//           error: error.message,
+//         });
+//       }
+//     }
+
+//     // If payment is already captured
+//     if (paymentDetails.status === "captured") {
+//       // Update user payment status
+//       const expiryDate = new Date();
+//       expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+
+//       const updatedUser = await User.findByIdAndUpdate(
+//         user_id,
+//         {
+//           paymentVerified: true,
+//           paymentExpiry: expiryDate,
+//         },
+//         { new: true }
+//       );
+
+//       if (!updatedUser) {
+//         throw new Error("Failed to update user payment status");
+//       }
+
+//       console.log("[INFO] User payment status updated:", updatedUser._id);
+
+//       return res.status(200).json({
+//         success: true,
+//         message: "Payment verified successfully",
+//         paymentDetails,
+//         user: {
+//           paymentVerified: updatedUser.paymentVerified,
+//           paymentExpiry: updatedUser.paymentExpiry,
+//         },
+//       });
+//     }
+
+//     return res.status(400).json({
+//       success: false,
+//       message: "Payment failed or not yet captured",
+//     });
+//   } catch (error) {
+//     console.error("[ERROR] Payment verification failed:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Error verifying payment",
+//       error: error.message,
+//     });
+//   }
+// };
+
 const verifyPayment = async (req, res) => {
   try {
     const { payment_id, user_id } = req.body;
+    console.log("🔹 [INFO] Received payment verification request.");
+    console.log("🔹 Payment ID:", payment_id);
+    console.log("🔹 User ID:", user_id);
 
     if (!payment_id || !user_id) {
+      console.log("🔴 [ERROR] Missing payment_id or user_id.");
       return res.status(400).json({
         success: false,
         message: "Payment ID and User ID are required",
@@ -95,24 +211,25 @@ const verifyPayment = async (req, res) => {
 
     // Fetch payment details from Razorpay
     const paymentDetails = await razorpayInstance.payments.fetch(payment_id);
+    console.log("🟢 [INFO] Payment details fetched:", paymentDetails);
+
     if (!paymentDetails) {
+      console.log("🔴 [ERROR] Payment not found.");
       return res.status(404).json({
         success: false,
         message: "Payment not found",
       });
     }
 
-    // If payment is authorized, capture it
     if (paymentDetails.status === "authorized") {
       try {
+        console.log("🟡 [INFO] Payment authorized, capturing...");
         const capturedPayment = await razorpayInstance.payments.capture(
           payment_id,
           paymentDetails.amount
         );
-        console.log(
-          "[INFO] Payment captured successfully:",
-          capturedPayment.id
-        );
+
+        console.log("🟢 [INFO] Payment captured:", capturedPayment.id);
 
         // Update user payment status
         const expiryDate = new Date();
@@ -120,18 +237,16 @@ const verifyPayment = async (req, res) => {
 
         const updatedUser = await User.findByIdAndUpdate(
           user_id,
-          {
-            paymentVerified: true,
-            paymentExpiry: expiryDate,
-          },
-          { new: true } // Return updated document
+          { paymentVerified: true, paymentExpiry: expiryDate },
+          { new: true }
         );
 
         if (!updatedUser) {
+          console.log("🔴 [ERROR] Failed to update user payment status.");
           throw new Error("Failed to update user payment status");
         }
 
-        console.log("[INFO] User payment status updated:", updatedUser._id);
+        console.log("🟢 [INFO] User payment status updated:", updatedUser._id);
 
         return res.status(200).json({
           success: true,
@@ -143,7 +258,7 @@ const verifyPayment = async (req, res) => {
           },
         });
       } catch (error) {
-        console.error("[ERROR] Payment capture/update failed:", error);
+        console.error("🔴 [ERROR] Payment capture/update failed:", error);
         return res.status(500).json({
           success: false,
           message: "Failed to capture payment or update user status",
@@ -152,26 +267,25 @@ const verifyPayment = async (req, res) => {
       }
     }
 
-    // If payment is already captured
     if (paymentDetails.status === "captured") {
-      // Update user payment status
+      console.log(
+        "🟢 [INFO] Payment already captured. Updating user status..."
+      );
       const expiryDate = new Date();
       expiryDate.setFullYear(expiryDate.getFullYear() + 1);
 
       const updatedUser = await User.findByIdAndUpdate(
         user_id,
-        {
-          paymentVerified: true,
-          paymentExpiry: expiryDate,
-        },
+        { paymentVerified: true, paymentExpiry: expiryDate },
         { new: true }
       );
 
       if (!updatedUser) {
+        console.log("🔴 [ERROR] Failed to update user payment status.");
         throw new Error("Failed to update user payment status");
       }
 
-      console.log("[INFO] User payment status updated:", updatedUser._id);
+      console.log("🟢 [INFO] User payment status updated:", updatedUser._id);
 
       return res.status(200).json({
         success: true,
@@ -184,12 +298,13 @@ const verifyPayment = async (req, res) => {
       });
     }
 
+    console.log("🔴 [ERROR] Payment failed or not yet captured.");
     return res.status(400).json({
       success: false,
       message: "Payment failed or not yet captured",
     });
   } catch (error) {
-    console.error("[ERROR] Payment verification failed:", error);
+    console.error("🔴 [ERROR] Payment verification failed:", error);
     return res.status(500).json({
       success: false,
       message: "Error verifying payment",

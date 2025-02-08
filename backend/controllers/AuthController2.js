@@ -234,7 +234,123 @@ const getUsersByBCategory = async (req, res) => {
   }
 };
 
+const updateUserAddressAndAadhar = async (req, res) => {
+  try {
+    const userId = req.user._id; // Get user ID from auth middleware
+    console.log("req.user", req.user);
+    console.log("userId", userId);
+    const { permanentAddress, aadharNumber } = req.body;
+    console.log("permanentAddress", permanentAddress);
+    console.log("aadharNumber", aadharNumber);
+    // Validate Aadhar number format if provided
+    if (aadharNumber) {
+      const aadharRegex = /^\d{12}$/;
+      if (!aadharRegex.test(aadharNumber)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid Aadhar number format. Must be 12 digits.",
+        });
+      }
+
+      // Check if Aadhar number already exists for another user
+      const existingUser = await UserModel.findOne({
+        aadharNumber,
+        _id: { $ne: userId },
+      });
+
+      console.log("existingUser", existingUser);
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: "Aadhar number already registered with another user",
+        });
+      }
+    }
+
+    // Build update object
+    const updateFields = {};
+    if (permanentAddress) updateFields.permanentAddress = permanentAddress;
+    if (aadharNumber) updateFields.aadharNumber = aadharNumber;
+
+    // Update user document
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      userId,
+      { $set: updateFields },
+      {
+        new: true,
+        runValidators: true,
+        select: "permanentAddress aadharNumber", // Only return these fields
+      }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "User details updated successfully",
+      data: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error in updateUserAddressAndAadhar:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating user details",
+      error: error.message,
+    });
+  }
+};
+
+// Add migration function to ensure fields exist for all users
+const migrateUserFields = async (req, res) => {
+  try {
+    console.log("Migrating user fields");
+    // Only allow admin to run migration
+    // if (req.user.role !== "Admin") {
+    //   return res.status(403).json({
+    //     success: false,
+    //     message: "Only admin can perform this action",
+    //   });
+    // }
+
+    // Update all documents that don't have these fields
+    const result = await UserModel.updateMany(
+      {
+        $or: [
+          { permanentAddress: { $exists: false } },
+          { aadharNumber: { $exists: false } },
+        ],
+      },
+      {
+        $set: {
+          permanentAddress: "",
+          aadharNumber: "",
+        },
+      }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Migration completed successfully",
+      modifiedCount: result.modifiedCount,
+    });
+  } catch (error) {
+    console.error("Error in migrateUserFields:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error during migration",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getUsersByBCategory,
   // fixUserData,
+  updateUserAddressAndAadhar,
+  migrateUserFields,
 };

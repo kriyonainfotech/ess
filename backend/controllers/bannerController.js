@@ -139,6 +139,7 @@ const getUserByBanner = async (req, res) => {
       banner.userId,
       "name email profilePic address businessCategory ratings userstatus"
     );
+    console.log(user, "user");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -369,7 +370,7 @@ const getAllBanners = async (req, res) => {
     // const banners = await Banner.find();
     const banners = await Banner.find().populate(
       "userId",
-      "name email userstatus address businessCategory"
+      "name email userstatus address businessCategory profilePic ratings userstatus"
     ); // Select only required fields like name and email
 
     // console.log(banners, "bacnners");

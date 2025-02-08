@@ -22,15 +22,17 @@ const {
   verifyCode,
   resetPassword,
   setReferral,
-  updateUserAddressAndAadhar,
-  migrateUserFields,
 } = require("../controllers/authController");
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const { verifyToken, isAdmin } = require("../middleware/auth");
 const { sendNotification } = require("../controllers/sendController");
-const { getUsersByBCategory } = require("../controllers/AuthController2");
+const {
+  getUsersByBCategory,
+  updateUserAddressAndAadhar,
+  migrateUserFields,
+} = require("../controllers/AuthController2");
 const router = express.Router();
 
 cloudinary.config({
@@ -113,9 +115,9 @@ router.post("/reset-password", resetPassword);
 router.post("/setReferral", setReferral);
 
 // Route to update permanent address and Aadhar number
-router.put("/update-address-aadhar", verifyToken, updateUserAddressAndAadhar);
+router.put("/updateUserAddressAndAadhar", updateUserAddressAndAadhar);
 
 // Route to migrate/create fields for existing users (admin only)
-router.post("/migrate-user-fields", isAdmin, migrateUserFields);
+router.post("/migrate-user-fields", migrateUserFields);
 
 module.exports = router;

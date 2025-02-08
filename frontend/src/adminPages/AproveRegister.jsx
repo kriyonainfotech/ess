@@ -15,6 +15,9 @@ const backend_API = import.meta.env.VITE_API_URL;
 // User Details Modal Component
 const UserDetailsModal = ({ user, onClose, onApprove }) => {
     const [zoomedImage, setZoomedImage] = useState(null);
+    const [permanentAddress, setPermanentAddress] = useState(user.permanentAddress || "");
+    const [aadharNumber, setAadharNumber] = useState(user.aadharNumber || "");
+    const [loading, setLoading] = useState(false);
 
     if (!user) return null;
 
@@ -23,6 +26,25 @@ const UserDetailsModal = ({ user, onClose, onApprove }) => {
         onApprove(user._id);
     };
 
+    const handleSave = async () => {
+        try {
+            setLoading(true);
+            const response = await axios.put(`${backend_API}/auth/updateUserAddressAndAadhar`, {
+                permanentAddress,
+                aadharNumber,
+            });
+            console.log(response.data);
+            if (response.status === 200) {
+                toast.success(response?.data?.message)
+            }
+        } catch (error) {
+            console.error("Error updating user details:", error);
+            alert("Failed to update user details");
+
+        } finally {
+            setLoading(false);
+        }
+    };
     const toggleZoom = (image) => {
         setZoomedImage(zoomedImage === image ? null : image);
     };
@@ -96,6 +118,35 @@ const UserDetailsModal = ({ user, onClose, onApprove }) => {
                                         ? user.referredBy.map(referrer => referrer.phone || 'Unknown').join(', ')
                                         : 'None'
                                     }
+                                </td>
+                            </tr>
+                            <tr>
+                                <td className="border border-gray-300 px-4 py-2 font-semibold">Permanent Address</td>
+                                <td className="border border-gray-300 px-4 py-2">
+                                    <input
+                                        type="text"
+                                        className="border p-2 w-full"
+                                        value={permanentAddress}
+                                        onChange={(e) => setPermanentAddress(e.target.value)}
+                                    />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td className="border border-gray-300 px-4 py-2 font-semibold">Aadhar Number</td>
+                                <td className="border border-gray-300 px-4 py-2 flex items-center gap-2">
+                                    <input
+                                        type="text"
+                                        className="border p-2 w-full"
+                                        value={aadharNumber}
+                                        onChange={(e) => setAadharNumber(e.target.value)}
+                                    />
+                                    <button
+                                        onClick={handleSave}
+                                        className="bg-blue-500 text-white px-4 py-2 rounded"
+                                        disabled={loading}
+                                    >
+                                        {loading ? "Saving..." : "Save"}
+                                    </button>
                                 </td>
                             </tr>
                         </tbody>

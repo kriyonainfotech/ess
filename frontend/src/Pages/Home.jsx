@@ -18,6 +18,8 @@ import Banner from '../components/Benner';
 
 const backend_API = import.meta.env.VITE_API_URL;
 const KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID;
+const KEY_SECRET = import.meta.env.VITE_RAZORPAY_KEY_SECRET;
+console.log(KEY_ID, KEY_SECRET);
 
 const Home = () => {
   const { user, setUser } = useContext(UserContext);
@@ -58,18 +60,16 @@ const Home = () => {
     }];
   }, [categories, bannerImage]);
 
+
+
   // Handle Payment Verification
   const handlePaymentVerify = async (userId) => {
     setLoading(true);
     try {
-      console.log("[INFO] Initiating payment for user:", userId);
-
       const orderResponse = await axios.post(`${backend_API}/payment/create-order`, {
-        amount: "121",
+        amount: "1",
         currency: "INR",
       });
-
-      console.log("[INFO] Order created:", orderResponse.data);
 
       if (orderResponse.data.success) {
         const order = orderResponse.data.data.order;
@@ -78,19 +78,14 @@ const Home = () => {
           amount: order.amount,
           currency: order.currency,
           name: "Enjoy Enjoy Services",
-          description: "Test Payment",
+          description: "Service Payment",
           order_id: order.id,
           handler: async (response) => {
             try {
-              console.log("[INFO] Payment response received:", response);
-
-              const verifyResponse = await axios.post(
-                `${backend_API}/payment/verify-payment`,
-                {
-                  payment_id: response.razorpay_payment_id,
-                  user_id: userId
-                }
-              );
+              const verifyResponse = await axios.post(`${backend_API}/payment/verify-payment`, {
+                payment_id: response.razorpay_payment_id,
+                user_id: userId
+              });
 
               if (verifyResponse.data.success) {
                 toast.success("Payment verified successfully");
@@ -100,34 +95,23 @@ const Home = () => {
                 toast.error("Payment verification failed.");
               }
             } catch (error) {
-              console.error("[ERROR] Payment verification failed:", error);
-              toast.error(error.response?.data?.message || "Payment verification failed");
+              console.error("Error verifying payment:", error);
+              toast.error("An error occurred during payment verification.");
             }
           },
-          prefill: {
-            name: user?.name,
-            email: user?.email,
-            contact: user?.phone,
-          },
-          theme: {
-            color: "#3399cc"
-          }
         };
 
         const rzp1 = new Razorpay(options);
-        rzp1.on('payment.failed', function (response) {
-          console.error("[ERROR] Payment failed:", response.error);
-          toast.error(response.error.description || "Payment failed");
-        });
         rzp1.open();
       }
     } catch (error) {
-      console.error("[ERROR] Payment initiation failed:", error);
-      toast.error(error.response?.data?.message || "Failed to initiate payment");
+      console.error("Error during payment process:", error);
+      toast.error(error?.response?.data?.message || "Payment process failed");
     } finally {
       setLoading(false);
     }
   };
+
 
   // Authentication State Management
   useEffect(() => {

@@ -5,6 +5,8 @@ import { UserContext } from '../UserContext';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import ProfileIcon from "../../public/User_icon.webp";
+import starGold from "../../public/starRating.png";
+import starSilver from "../../public/startSilver.png";
 import '../assets/Modal/Modal.css';
 const OfferModal = ({ BannerUser, offerImage, closeModal, allBanners, initialBannerId }) => {
   const { user } = useContext(UserContext);
@@ -38,6 +40,25 @@ const OfferModal = ({ BannerUser, offerImage, closeModal, allBanners, initialBan
   };
   const handleClosePopup = () => {
     setPopupVisible(false); // 🔥 Close Contact Now Modal
+  };
+
+  const renderStars = (ratings = [], maxRating = 10) => {
+    if (!ratings.length) return null; // Handle empty ratings
+
+    const ratingValue = Array.isArray(currentOffer?.userId?.ratings)
+      ? currentOffer?.userId?.ratings.reduce((acc, cur) => acc + cur.rating, 0) / currentOffer?.userId?.ratings.length
+      : 0;
+
+
+
+    return [...Array(maxRating)].map((_, i) => (
+      <img
+        key={i}
+        src={i < ratingValue ? starGold : starSilver}
+        alt={i < ratingValue ? 'Filled Star' : 'Empty Star'}
+        width={15}
+      />
+    ));
   };
 
 
@@ -93,22 +114,56 @@ const OfferModal = ({ BannerUser, offerImage, closeModal, allBanners, initialBan
               </div>
               <div className="modal-body">
                 {currentOffer ? (
-                  <div className="offer-content">
-                    <img src={currentOffer.imageUrl} className="offer-banner" alt="Offer" />
-                    <div className="offer-details flex pt-2">
-                      <div className="col-4">
-                        <div className="img w-[100px] h-[150px] overflow-hidden">
-                          <img src={currentOffer?.userId?.profilePic || ProfileIcon} className="profile-pic" alt="User" />
-                        </div>
+                  <div className="offer-details bg-white rounded-lg shadow-md p-4 flex flex-col sm:flex-row items-center sm:items-start gap-4">
+                    {/* Left - Banner Image (col-6) */}
+                    <div className="w-full sm:w-1/2 aspect-square rounded-lg overflow-hidden">
+                      <img
+                        src={currentOffer.imageUrl}
+                        className="w-full h-full object-cover"
+                        alt="Banner"
+                      />
+
+                    </div>
+
+                    {/* Right - User Details (col-6) */}
+                    <div className="w-full sm:w-1/2 flex flex-col items-center sm:items-start text-center sm:text-left">
+                      {/* Profile Image */}
+                      <div className="w-[80px] h-[80px] sm:w-[100px] sm:h-[100px] rounded-full overflow-hidden border border-gray-300">
+                        <img
+                          src={currentOffer?.userId?.profilePic || ProfileIcon}
+                          className="w-full h-full object-cover"
+                          alt="User"
+                        />
                       </div>
-                      <div className="col-8 pt-3">
-                        <h5>{currentOffer.userId?.name}</h5>
-                        <p>{currentOffer.userId?.email}</p>
-                        <p className="category">{currentOffer.userId?.businessCategory}</p>
-                        <div className="ratings">{/* Render star ratings here */}</div>
+
+                      {/* User Details */}
+                      <div className='flex flex-col items-center sm:items-start text-center sm:text-left '>
+                        <h5 className="text-lg font-semibold text-gray-800 mt-2">{currentOffer.userId?.name}</h5>
+                        <p className="text-sm text-gray-600">{currentOffer.userId?.email}</p>
+                        <p className="text-sm text-gray-500">{currentOffer.userId?.businessCategory}</p>
+                        <div className='py-2 flex flex-col items-center sm:items-start'>
+                          <strong className='text-sm'>Provider</strong>
+                          <div>
+                            {currentOffer?.userId?.ratings?.length > 0 ? (
+                              <div className='flex items-center'>
+                                {renderStars(currentOffer?.userId?.ratings, 10)}
+                                <span className="pl-2 text-sm text-gray-700">
+
+
+                                  {((currentOffer?.userId?.ratings?.reduce((acc, r) => acc + r.rating, 0) / currentOffer?.userId?.ratings?.length).toFixed(1))}
+                                </span>
+                              </div>
+
+                            ) : null}
+
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
+
+
+
                 ) : (
                   <p>Loading user data...</p>
                 )}
