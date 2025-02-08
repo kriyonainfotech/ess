@@ -452,13 +452,6 @@ const Card = () => {
                                         <div className="position-relative">
                                             {preview && <img src={preview} alt="Banner Preview" className="w-full h-auto" />}
 
-                                            <img
-                                                src={existingBanner}
-                                                alt="Profile Banner"
-                                                className="img-fluid rounded"
-                                                style={{ maxHeight: '300px', width: '100%', objectFit: 'cover' }}
-                                                onClick={() => handleImageClick(existingBanner)}
-                                            />
                                             <button
                                                 className="btn btn-danger position-absolute top-0 end-0 m-2"
 
