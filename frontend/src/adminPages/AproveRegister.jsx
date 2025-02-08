@@ -8,29 +8,36 @@ import AdminSidebar from '../admincomponents/AdminSidebar';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { toast } from 'react-toastify';
+import { IoArrowBack } from "react-icons/io5";
 
 const backend_API = import.meta.env.VITE_API_URL;
 
-// User Details Modal
+// User Details Modal Component
 const UserDetailsModal = ({ user, onClose, onApprove }) => {
+    const [zoomedImage, setZoomedImage] = useState(null);
+
     if (!user) return null;
 
     const handleApproveClick = (e) => {
-        e.stopPropagation();  // Prevent row click event
-        onApprove(user._id);  // Approve user
+        e.stopPropagation();
+        onApprove(user._id);
+    };
+
+    const toggleZoom = (image) => {
+        setZoomedImage(zoomedImage === image ? null : image);
     };
 
     return (
         <div className="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-            <div className="modal-content bg-white p-5 rounded shadow-lg w-full sm:w-3/4 md:w-1/2 lg:w-1/3 max-w-4xl h-[80vh] overflow-hidden">
-                <h2 className="text-xl font-bold mb-4 text-center">User Details</h2>
-                <div className="modal-body overflow-x-auto">
+            <div className="modal-content bg-white p-2 rounded shadow-lg w-full sm:w-3/4 md:w-1/2 lg:w-1/3 max-w-4xl h-[80vh] overflow-hidden">
+                <h2 className="text-xl font-bold py-3 text-center border">User Details</h2>
+                <div className="modal-body overflow-y-auto">
                     <table className="table-auto w-full border-collapse border border-gray-300">
                         <tbody>
                             <tr>
                                 <td className="border border-gray-300 px-4 py-2 font-semibold">ProfilePic</td>
                                 <td className="border border-gray-300 px-4 py-2">
-                                    <img src={user.profilePic} width={50} alt="" />
+                                    <img src={user.profilePic} width={50} alt="Profile" />
                                 </td>
                             </tr>
                             <tr>
@@ -65,9 +72,21 @@ const UserDetailsModal = ({ user, onClose, onApprove }) => {
                             </tr>
                             <tr>
                                 <td className="border border-gray-300 px-4 py-2 font-semibold">Aadhar</td>
-                                <td className="border border-gray-300 px-4 py-2">
-                                    <img src={user.frontAadhar} width={50} alt="" />
-                                    <img src={user.backAadhar} width={50} alt="" />
+                                <td className="border border-gray-300 px-4 py-2 flex gap-2">
+                                    <img
+                                        src={user.frontAadhar}
+                                        width={50}
+                                        alt="Front Aadhar"
+                                        className="cursor-pointer"
+                                        onClick={() => toggleZoom(user.frontAadhar)}
+                                    />
+                                    <img
+                                        src={user.backAadhar}
+                                        width={50}
+                                        alt="Back Aadhar"
+                                        className="cursor-pointer"
+                                        onClick={() => toggleZoom(user.backAadhar)}
+                                    />
                                 </td>
                             </tr>
                             <tr>
@@ -87,6 +106,21 @@ const UserDetailsModal = ({ user, onClose, onApprove }) => {
                     <button onClick={onClose} className="btn btn-secondary w-full sm:w-auto">Close</button>
                 </div>
             </div>
+
+            {/* Zoomed Image Modal */}
+            {zoomedImage && (
+                <div
+                    className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-[60]"
+                    onClick={() => setZoomedImage(null)}
+                >
+                    <img
+                        src={zoomedImage}
+                        alt="Zoomed Aadhar"
+                        className="max-w-[90%] max-h-[90vh] object-contain"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                </div>
+            )}
         </div>
     );
 };
@@ -221,78 +255,90 @@ const AllUsers = () => {
             <AdminHeader />
             <AdminSidebar />
             <div className="my-32">
+
                 <section>
-                    <div className="container">
+                    <div className="container-fluid">
                         <div className="row">
                             <div className="col-12">
-                                <div className="d-flex justify-content-between align-items-start">
-                                    <div className="col-12 col-md-4">
-                                        <div>
-                                            <label htmlFor="role" className="form-label">Select filter</label>
-                                            <select
-                                                id="role"
-                                                className="form-select"
-                                                value={filter}
-                                                onChange={(e) => setFilter(e.target.value)}
-                                            >
-                                                <option value="">All</option>
-                                                <option value="A-Z">A-Z</option>
-                                                <option value="Z-A">Z-A</option>
-                                                <option value="date">DATE</option>
-                                                <option value="category">Category</option>
-                                            </select>
-                                        </div>
-                                        {filter === 'date' && (
-                                            <div className="mt-3">
-                                                <label className="form-label">Select Date</label>
-                                                <div className="input-group">
-                                                    <DatePicker
-                                                        selected={selectedDate}
-                                                        onChange={(date) => setSelectedDate(date)}
-                                                        dateFormat="yyyy-MM-dd"
-                                                        className="form-control"
-                                                    />
-                                                    <span className="input-group-text">
-                                                        <MdDateRange />
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        )}
-                                        {filter === 'category' && (
-                                            <div className="mt-3">
-                                                <label className="form-label">Select Category</label>
+                                <div className="d-flex justify-content-between align-items-end">
+                                    <div className="col-2 flex justify-content-center">
+                                        <button
+                                            onClick={() => navigate('/admin')}
+                                            className="btn btn-light d-flex align-items-center gap-2 border hover:bg-gray-100"
+                                        >
+                                            <IoArrowBack size={20} />
+                                            <span>Back to Dashboard</span>
+                                        </button>
+                                    </div>
+                                    <div className="col-8 flex align-items-end justify-content-end">
+                                        <div className="col-12 col-md-5">
+                                            <div>
+                                                <label htmlFor="role" className="form-label">Select filter</label>
                                                 <select
+                                                    id="role"
                                                     className="form-select"
-                                                    value={selectedCategory}
-                                                    onChange={(e) => setSelectedCategory(e.target.value)}
+                                                    value={filter}
+                                                    onChange={(e) => setFilter(e.target.value)}
                                                 >
-                                                    <option value="">All Categories</option>
-                                                    {categories.map((category) => (
-                                                        <option key={category._id} value={category.categoryName}>
-                                                            {category.categoryName}
-                                                        </option>
-                                                    ))}
+                                                    <option value="">All</option>
+                                                    <option value="A-Z">A-Z</option>
+                                                    <option value="Z-A">Z-A</option>
+                                                    <option value="date">DATE</option>
+                                                    <option value="category">Category</option>
                                                 </select>
                                             </div>
-                                        )}
-                                    </div>
-                                    <div className="mt-4">
-                                        <button
-                                            onClick={() => navigate('/admin/users')}
-                                            className="btn btn-primary d-flex align-items-center gap-2"
-                                        >
-                                            <span>View All Users</span>
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                width="16"
-                                                height="16"
-                                                fill="currentColor"
-                                                className="bi bi-arrow-right"
-                                                viewBox="0 0 16 16"
+                                            {filter === 'date' && (
+                                                <div className="mt-3">
+                                                    <label className="form-label">Select Date</label>
+                                                    <div className="input-group">
+                                                        <DatePicker
+                                                            selected={selectedDate}
+                                                            onChange={(date) => setSelectedDate(date)}
+                                                            dateFormat="yyyy-MM-dd"
+                                                            className="form-control"
+                                                        />
+                                                        <span className="input-group-text">
+                                                            <MdDateRange />
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {filter === 'category' && (
+                                                <div className="mt-3">
+                                                    <label className="form-label">Select Category</label>
+                                                    <select
+                                                        className="form-select"
+                                                        value={selectedCategory}
+                                                        onChange={(e) => setSelectedCategory(e.target.value)}
+                                                    >
+                                                        <option value="">All Categories</option>
+                                                        {categories.map((category) => (
+                                                            <option key={category._id} value={category.categoryName}>
+                                                                {category.categoryName}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="col-12 col-md-3 mt-4 flex justify-content-center">
+                                            <button
+                                                onClick={() => navigate('/admin/users')}
+                                                className="btn btn-primary d-flex align-items-center gap-2"
                                             >
-                                                <path fillRule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z" />
-                                            </svg>
-                                        </button>
+                                                <span>View All Users</span>
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="16"
+                                                    height="16"
+                                                    fill="currentColor"
+                                                    className="bi bi-arrow-right"
+                                                    viewBox="0 0 16 16"
+                                                >
+                                                    <path fillRule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z" />
+                                                </svg>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

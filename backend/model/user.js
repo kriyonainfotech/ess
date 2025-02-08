@@ -39,6 +39,22 @@ const userSchema = new mongoose.Schema(
         required: true,
       },
     },
+    permanentAddress: {
+      type: String,
+    },
+    aadharNumber: {
+      type: String,
+      unique: true,
+      minlength: 12,
+      maxlength: 12,
+      validate: {
+        validator: function (v) {
+          return /^\d{12}$/.test(v);
+        },
+        message: (props) =>
+          `${props.value} is not a valid Aadhar number! Must be 12 digits.`,
+      },
+    },
     password: {
       type: String,
       required: true,
@@ -89,7 +105,9 @@ const userSchema = new mongoose.Schema(
       {
         user: {
           type: Object, // Store the full user object
-          required: true,
+          // type: mongoose.Schema.Types.ObjectId,
+          // ref: "User",
+          // required: true,
         },
         status: {
           type: String,
@@ -109,7 +127,9 @@ const userSchema = new mongoose.Schema(
       {
         user: {
           type: Object, // Store the full user object
-          required: true,
+          // type: mongoose.Schema.Types.ObjectId,
+          // ref: "User",
+          // required: true,
         },
         status: {
           type: String,

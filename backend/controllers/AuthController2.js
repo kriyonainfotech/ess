@@ -1,5 +1,59 @@
 const UserModel = require("../model/user");
 
+// const fixUserData = async (req, res) => {
+//   try {
+//     const { userId } = req.body;
+//     // Find the user
+//     console.log("UserId:", userId);
+//     let user = await UserModel.findById(userId).select(
+//       "name sended_requests received_requests"
+//     );
+//     console.log("User:", user);
+//     if (!user) {
+//       console.log("User not found");
+//       return res.status(404).json({ message: "User not found" });
+//     }
+//     console.log("Original sended_requests:", user.sended_requests);
+//     // Update sended_requests
+//     user.sended_requests = user.sended_requests.map((request) => {
+//       if (typeof request.user === "object" && request.user._id) {
+//         return {
+//           user: request.user._id, // Extract the ObjectId
+//           status: request.status,
+//           date: request.date,
+//           providerrating: request.providerrating,
+//         };
+//       } else {
+//         console.log("Invalid user object in sended_requests:", request.user);
+//         return request; // Keep the existing value if invalid
+//       }
+//     });
+
+//     console.log("Updated sended_requests:", user.sended_requests);
+//     // Update received_requests
+//     user.received_requests = user.received_requests.map((request) => {
+//       if (typeof request.user === "object" && request.user._id) {
+//         return {
+//           user: request.user._id, // Extract the ObjectId
+//           status: request.status,
+//           date: request.date,
+//           userrating: request.userrating,
+//         };
+//       } else {
+//         console.log("Invalid user object in received_requests:", request.user);
+//         return request; // Keep the existing value if invalid
+//       }
+//     });
+
+//     // Save the updated user document
+//     await user.save();
+//     console.log("User data updated successfully!");
+//   } catch (error) {
+//     console.log("Error updating user data:", error);
+//   }
+// };
+
+// Run the function for the specific user
 // const getUsersByBCategory = async (req, res) => {
 //   try {
 //     const { category, city, sortByRating } = req.body;
@@ -182,4 +236,5 @@ const getUsersByBCategory = async (req, res) => {
 
 module.exports = {
   getUsersByBCategory,
+  // fixUserData,
 };

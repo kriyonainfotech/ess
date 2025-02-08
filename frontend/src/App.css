@@ -510,7 +510,7 @@ input[type="file"] {
   font-weight: 900;
 }
 
-/* Add these styles for sticky table header */
+/* Update the table container styles */
 .table-container {
   max-height: 70vh;
   overflow-y: auto;
@@ -519,7 +519,7 @@ input[type="file"] {
 
 .table-container table {
   width: 100%;
-  border-collapse: separate;
+  border-collapse: collapse; /* Changed from separate to collapse */
   border-spacing: 0;
 }
 
@@ -527,13 +527,37 @@ input[type="file"] {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: white;
 }
 
 .table-container thead th {
-  border-bottom: 2px solid #dee2e6;
+  border: 1px solid #dee2e6; /* Added border to all sides */
   background: rgb(189, 189, 190);
   box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+}
+
+/* Add borders to table cells */
+.table-container td,
+.table-container th {
+  border: 1px solid #dee2e6;
+  padding: 12px;
+}
+
+/* Add hover effect on tbody rows */
+.table-container tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+/* Keep borders visible on hover */
+.table-container tbody tr:hover td,
+.table-container tbody tr:hover th {
+  border: 1px solid #dee2e6;
+}
+
+/* Ensure last row border is visible */
+.table-container tbody tr:last-child td,
+.table-container tbody tr:last-child th {
+  border-bottom: 1px solid #dee2e6;
 }
 
 /* For Firefox */

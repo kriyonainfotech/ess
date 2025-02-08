@@ -22,6 +22,7 @@ const {
   deleteNotification,
   getNotificationsMobile,
 } = require("../controllers/sendController");
+const { fixUserData } = require("../controllers/AuthController2");
 const router = express.Router();
 router.post("/sentRequest", verifyToken, sentRequest);
 router.post("/sentRequestMobile", sentRequestMobile);
@@ -49,5 +50,7 @@ router.delete("/deleteRequest", deleteRequest);
 
 router.post("/getSendedRequestsMobile", getSendedRequestsMobile);
 router.post("/getReceivedRequestsMobile", getReceivedRequestsMobile);
+
+// router.post("/abc", fixUserData);
 
 module.exports = router;

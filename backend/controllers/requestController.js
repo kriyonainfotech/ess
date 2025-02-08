@@ -119,16 +119,28 @@ const sentRequest = async (req, res) => {
     console.log("✅ No existing request found. Proceeding to send request...");
 
     console.log("📌 Adding request to both users...");
-    await User.findByIdAndUpdate(senderId, {
-      $addToSet: { sended_requests: { user: receiver, status: "pending" } },
-    });
+    // await Promise.all([
+    //   User.findByIdAndUpdate(senderId, {
+    //     $addToSet: { sended_requests: { user: receiver, status: "pending" } },
+    //   }),
+    //   User.findByIdAndUpdate(receiverId, {
+    //     $addToSet: { received_requests: { user: sender, status: "pending" } },
+    //   }),
+    // ]);
 
-    await User.findByIdAndUpdate(receiverId, {
-      $addToSet: { received_requests: { user: sender, status: "pending" } },
-    });
+    const senderUpdate = await User.updateOne(
+      { _id: senderId },
+      { $push: { sended_requests: { user: receiver._id, status: "pending" } } }
+    );
+
+    const receiverUpdate = await User.updateOne(
+      { _id: receiverId },
+      { $push: { received_requests: { user: sender._id, status: "pending" } } }
+    );
 
     console.log("📌 Sending notification...");
-
+    console.log("📌 Sender Update:", senderUpdate);
+    console.log("📌 Receiver Update:", receiverUpdate);
     const Notification = {
       senderName: sender.name,
       fcmToken: receiver.fcmToken,
@@ -142,8 +154,8 @@ const sentRequest = async (req, res) => {
     return res.status(200).send({
       success: true,
       message: "Request sent successfully.",
-      sender,
-      receiver,
+      sender: { _id: sender._id, name: sender.name },
+      receiver: { _id: receiver._id, name: receiver.name },
     });
   } catch (error) {
     console.error("❌ Error in request process:", error);

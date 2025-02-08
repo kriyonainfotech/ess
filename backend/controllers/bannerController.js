@@ -284,7 +284,7 @@ const updateBannerMobile = async (req, res) => {
 const deleteBanner = async (req, res) => {
   try {
     const { bannerId } = req.body;
-    console.log(req.body);
+    console.log(req.body, "req.body");
 
     const banner = await Banner.findById(bannerId);
     if (!banner) {

@@ -146,7 +146,7 @@ const Profile = () => {
                                                     <p className='text-gray'>Your Referral Link :</p>
                                                     <p onClick={copyToClipboard} className="text-blue-500 cursor-pointer">{referralLink}</p>
                                                     {linkCopied && <p className="text-green-500">Link copied!</p>}
-                                                    <Link to={`whatsapp://send?text=${referralLink}`} className=' bg-blue text-white p-0 text-sm p-1 rounded-1'>
+                                                    <Link to={`whatsapp://send?text=${referralLink}`} className=' bg-blue text-white text-sm p-1 rounded-1'>
                                                         Share
                                                     </Link>
                                                     {

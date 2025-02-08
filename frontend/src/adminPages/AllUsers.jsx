@@ -13,12 +13,22 @@ const backend_API = import.meta.env.VITE_API_URL;
 
 // User Details Modal
 const UserDetailsModal = ({ user, onClose }) => {
+  const [zoomedImage, setZoomedImage] = useState(null);
   if (!user) return null;
+
+  const handleApproveClick = (e) => {
+    e.stopPropagation();
+    onApprove(user._id);
+  };
+
+  const toggleZoom = (image) => {
+    setZoomedImage(zoomedImage === image ? null : image);
+  };
 
   return (
     <div className="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="modal-content bg-white  rounded shadow-lg w-full sm:w-2/4 md:w-1/2 lg:w-1/3 max-w-4xl h-[80vh] overflow-hidden">
-        <h2 className="text-xl font-bold mb-4 text-center">User Details</h2>
+      <div className="modal-content bg-white  rounded shadow-lg w-full sm:w-2/4 md:w-1/2 lg:w-1/3 max-w-6xl h-[80vh] overflow-hidden">
+        <h2 className="text-xl font-bold my-4 text-center">User Details</h2>
         <div className="modal-body overflow-x-auto "> {/* Make the body scrollable */}
           <table className="table-auto w-full border-collapse border border-gray-300">
             <tbody>
@@ -60,28 +70,47 @@ const UserDetailsModal = ({ user, onClose }) => {
               </tr>
               <tr>
                 <td className="border border-gray-300 px-4 py-2 font-semibold">Aadhar</td>
-                <td className="border w-100 border-gray-300 px-4 py-2 d-flex">
-                  <div className="col-6">
-                    <div className="img-adhar w-[200px] h-[200px]">
-                      <img src={user.frontAadhar} className='w-100 h-100 img-fluid' alt="" />
-
-                    </div>
-                  </div>
-                  <div className="col-6">
-                    <div className="img-adhar  w-[200px] h-[200px]">
-                      <img src={user.backAadhar} className='w-100 h-100 img-fluid' alt="" />
-                    </div>
-                  </div>
+                <td className="border border-gray-300 px-4 py-2 flex gap-2">
+                  <img
+                    src={user.frontAadhar}
+                    width={50}
+                    alt="Front Aadhar"
+                    className="cursor-pointer"
+                    onClick={() => toggleZoom(user.frontAadhar)}
+                  />
+                  <img
+                    src={user.backAadhar}
+                    width={50}
+                    alt="Back Aadhar"
+                    className="cursor-pointer"
+                    onClick={() => toggleZoom(user.backAadhar)}
+                  />
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
-        <div className="flex justify-between m-4">
+        <div className="flex justify-end m-4">
           {/* <button onClick={handleApproveClick} className="btn btn-primary w-full sm:w-auto">Approve</button> */}
           <button onClick={onClose} className="btn btn-secondary w-full sm:w-auto">Close</button>
         </div>
       </div>
+
+      {/* Zoomed Image Modal */}
+      {zoomedImage && (
+        <div
+          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-[60]"
+          onClick={() => setZoomedImage(null)}
+        >
+          <img
+            src={zoomedImage}
+            alt="Zoomed Aadhar"
+            className="max-w-[90%] max-h-[90vh] object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
     </div>
   );
 };
@@ -283,6 +312,7 @@ const AllUsers = () => {
                       <th>Business Category</th>
                       <th>Business Address</th>
                       <th>ReffredBy</th>
+                      <th>Payment Status</th>
                       <th>Action</th>
                     </tr>
                   </thead>
@@ -302,6 +332,23 @@ const AllUsers = () => {
                         <td>{user.referredBy.map((r) => {
                           return r.name
                         })}</td>
+                        <td>
+                          {user.paymentVerified ? (
+                            <button className="btn btn-success btn-sm flex items-center gap-1" title="Payment Verified">
+                              Payment Verified
+                            </button>
+
+
+                          ) : (
+                            <button
+                              className="btn btn-danger btn-sm"
+                              title="Payment Not Verified"
+                            >
+                              Payment Not Verified
+                            </button>
+
+                          )}
+                        </td>
                         <td className="d-flex">
                           <button
                             onClick={(e) => {

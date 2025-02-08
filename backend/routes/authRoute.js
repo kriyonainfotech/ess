@@ -22,6 +22,8 @@ const {
   verifyCode,
   resetPassword,
   setReferral,
+  updateUserAddressAndAadhar,
+  migrateUserFields,
 } = require("../controllers/authController");
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
@@ -109,5 +111,11 @@ router.post("/forgot-password", forgotPassword);
 router.post("/verify-code", verifyCode);
 router.post("/reset-password", resetPassword);
 router.post("/setReferral", setReferral);
+
+// Route to update permanent address and Aadhar number
+router.put("/update-address-aadhar", verifyToken, updateUserAddressAndAadhar);
+
+// Route to migrate/create fields for existing users (admin only)
+router.post("/migrate-user-fields", isAdmin, migrateUserFields);
 
 module.exports = router;

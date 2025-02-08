@@ -1130,15 +1130,24 @@ const UpdateUser = async (req, res) => {
     });
   }
 };
-
 const setUserStatus = async (req, res) => {
   try {
-    const userId = req.user.id; // Assuming the user ID is in `req.user` after authentication
+    console.log("🔍 Received request to update user status"); // Log request start
+
+    const userId = req.user?.id; // Ensure user ID is available
+    console.log(userId, "userId");
+    if (!userId) {
+      console.log("❌ User ID missing in request");
+      return res
+        .status(401)
+        .json({ success: false, message: "Unauthorized request" });
+    }
 
     const { userstatus } = req.body;
 
     // Validate status
     if (!userstatus || !["available", "unavailable"].includes(userstatus)) {
+      console.log("❌ Invalid status value:", userstatus);
       return res.status(400).json({
         success: false,
         message:
@@ -1146,29 +1155,37 @@ const setUserStatus = async (req, res) => {
       });
     }
 
-    // Update user status in the database
-    const updatedUserstatus = await UserModel.findByIdAndUpdate(
+    console.log(`🛠 Updating status for user ${userId} to ${userstatus}`);
+
+    // Measure query execution time
+    const startTime = Date.now();
+    const updatedUser = await UserModel.findByIdAndUpdate(
       userId,
-      { userstatus },
-      { new: true, runValidators: true } // Ensure validation is applied
+      { $set: { userstatus } },
+      { new: true, select: "userstatus" } // ✅ Returns the updated document with only `userstatus`
     );
 
+    console.log(updatedUser, "updatedUser");
+    const endTime = Date.now();
+    console.log(`✅ Database update completed in ${endTime - startTime}ms`);
+
     // If user not found, return an error
-    if (!updatedUserstatus) {
+    if (!updatedUser) {
+      console.log("❌ User not found:", userId);
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
 
-    // Respond with success
+    console.log("✅ User status updated successfully:", updatedUser.userstatus);
     return res.status(200).json({
       success: true,
       message: `User status updated to ${userstatus}`,
-      user: updatedUserstatus,
+      user: updatedUser,
     });
   } catch (error) {
-    console.error(error);
+    console.error("🔥 Error in setUserStatus:", error);
     return res.status(500).json({
       success: false,
       message: "An error occurred while updating the user status",
@@ -1484,6 +1501,115 @@ const getrequests = async (req, res) => {
   }
 };
 
+const updateUserAddressAndAadhar = async (req, res) => {
+  try {
+    const userId = req.user.id; // Get user ID from auth middleware
+    const { permanentAddress, aadharNumber } = req.body;
+
+    // Validate Aadhar number format if provided
+    if (aadharNumber) {
+      const aadharRegex = /^\d{12}$/;
+      if (!aadharRegex.test(aadharNumber)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid Aadhar number format. Must be 12 digits.",
+        });
+      }
+
+      // Check if Aadhar number already exists for another user
+      const existingUser = await UserModel.findOne({
+        aadharNumber,
+        _id: { $ne: userId },
+      });
+
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: "Aadhar number already registered with another user",
+        });
+      }
+    }
+
+    // Build update object
+    const updateFields = {};
+    if (permanentAddress) updateFields.permanentAddress = permanentAddress;
+    if (aadharNumber) updateFields.aadharNumber = aadharNumber;
+
+    // Update user document
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      userId,
+      { $set: updateFields },
+      {
+        new: true,
+        runValidators: true,
+        select: "permanentAddress aadharNumber", // Only return these fields
+      }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "User details updated successfully",
+      data: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error in updateUserAddressAndAadhar:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating user details",
+      error: error.message,
+    });
+  }
+};
+
+// Add migration function to ensure fields exist for all users
+const migrateUserFields = async (req, res) => {
+  try {
+    // Only allow admin to run migration
+    if (req.user.role !== "Admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admin can perform this action",
+      });
+    }
+
+    // Update all documents that don't have these fields
+    const result = await UserModel.updateMany(
+      {
+        $or: [
+          { permanentAddress: { $exists: false } },
+          { aadharNumber: { $exists: false } },
+        ],
+      },
+      {
+        $set: {
+          permanentAddress: "",
+          aadharNumber: "",
+        },
+      }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Migration completed successfully",
+      modifiedCount: result.modifiedCount,
+    });
+  } catch (error) {
+    console.error("Error in migrateUserFields:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error during migration",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -1509,4 +1635,6 @@ module.exports = {
   updateUsersPaymentVerified,
   getrequests,
   updateReferralChain,
+  updateUserAddressAndAadhar,
+  migrateUserFields,
 };

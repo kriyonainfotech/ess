@@ -8,12 +8,15 @@ import CurrentLocation from './CurrentLocation';
 import ProfileIcon from "../../../public/User_icon.webp"
 import starGold from "../../../public/starRating.png"
 import starSilver from "../../../public/startSilver.png"
+import { MdDelete, MdAddPhotoAlternate } from "react-icons/md";
+// import { ToastBar } from 'react-hot-toast';
 const backend_API = import.meta.env.VITE_API_URL;
 
 const Card = () => {
     const token = JSON.parse(localStorage.getItem('token'));
     const { user } = useContext(UserContext);
     const [loading, setLoading] = useState(false);
+    const [preview, setPreview] = useState(null);
 
     // State to manage availability
     const [isAvailable, setIsAvailable] = useState(() => {
@@ -34,14 +37,15 @@ const Card = () => {
         try {
             const response = await axios.put(
                 `${backend_API}/auth/setUserStatus`,
-                { userstatus: newStatus ? 'available' : 'unavailable' },
+                { userstatus: newStatus ? "available" : "unavailable" },
                 {
                     headers: {
-                        "Authorization": `Bearer ${token}`,
+                        Authorization: `Bearer ${token}`,
                         "Content-Type": "application/json",
                     },
                 }
             );
+            console.log(response, "response");
             if (response.status === 200) {
                 toast.success('User status updated successfully');
             }
@@ -55,7 +59,7 @@ const Card = () => {
     };
 
     // Render stars for the rating
-  
+
     const renderStar = (ratings = [], maxRating = 10) => {
         const ratingValue = ratings.length > 0 ? ratings.reduce((acc, cur) => acc + cur, 0) / ratings.length : 0;
         const stars = [];
@@ -95,10 +99,185 @@ const Card = () => {
         ? user?.providerRatings.reduce((acc, curr) => acc + curr.rating, 0) / user?.providerRatings.length
         : 0; // Average rating if available, otherwise default to 0.
 
+    // Add new states for image zoom modal
+    const [showImageModal, setShowImageModal] = useState(false);
+    const [zoomedImage, setZoomedImage] = useState(null);
+
+    // Add function to handle image click
+    const handleImageClick = (imageSrc) => {
+        setZoomedImage(imageSrc);
+        setShowImageModal(true);
+    };
+
+    // Add Image Modal Component
+    const ImageModal = ({ image, onClose }) => {
+        if (!image) return null;
+
+        return (
+            <div
+                className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50"
+                onClick={onClose}
+            >
+                <div className="relative max-w-4xl w-90 mx-4">
+                    <button
+                        className="absolute -top-10 right-0 text-white text-xl font-bold"
+                        onClick={onClose}
+                    >
+                        ✕
+                    </button>
+                    <img
+                        src={image}
+                        alt="Zoomed"
+                        className="w-100 h-auto rounded-lg"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                </div>
+            </div>
+        );
+    };
+
+    // Add new states
+    const [banner, setBanner] = useState(null);
+    const [existingBanner, setExistingBanner] = useState(null);
+    const [bannerId, setBannerId] = useState(null);
+
+    // Fetch existing banner on component mount
+    useEffect(() => {
+        fetchUserBanner();
+    }, []);
+
+    // Function to fetch user's banner
+    const fetchUserBanner = async () => {
+        try {
+            const response = await axios.get(`${backend_API}/banner/getBanners`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            // console.log("Banner response:", response.data.banners[0]);
+
+            // Check if banners array exists and has at least one item
+            if (response.data.success && response.data.banners?.length > 0) {
+                // Use proper image URL path from the response
+                const bannerUrl = response.data.banners[0].imageUrl;
+                // console.log("Banner:", banner);
+                setExistingBanner(bannerUrl);
+                setPreview(bannerUrl);
+                setBannerId(response?.data?.banners[0]?._id);
+            }
+        } catch (error) {
+            console.error("Error fetching banner:", error);
+        }
+    };
+    // Handle banner image selection
+    const handleBannerChange = async (e) => {
+
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        if (file) {
+            const formData = new FormData();
+            formData.append('banner', file);
+
+            try {
+                setLoading(true);
+                const response = await axios.post(
+                    `${backend_API}/banner/addBanner`,
+                    formData,
+                    {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                            'Authorization': `Bearer ${token}`
+                        }
+                    }
+                );
+                console.log("Banner upload response:", response.data); // Debug log
+                if (response.data.success) {
+                    toast.success("Banner added successfully");
+                    // Update the banner state with the direct image URL
+                    setExistingBanner(response.data.banner.bannerImage || response.data.banner);
+                    setBannerId(response?.data?.banner?._id);
+                    // console.log(response?.data?.banner?._id, "bannerrrId");
+                }
+            } catch (error) {
+                console.error("Banner upload error:", error);
+                toast.error(error.response?.data?.message || "Error adding banner");
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
+
+    // Handle banner delete
+    const handleDeleteBanner = async (bannerId) => {
+        // setPreview(null);
+        console.log(bannerId, "bannerId");
+        toast.info(
+            <div>
+                <p>Are you sure you want to delete this Banner?</p>
+
+                <div className="d-flex justify-content-center gap-2">
+                    <button className="btn btn-danger btn-sm" onClick={() => confirmDelete(bannerId)}>Yes</button>
+                    <button className="btn btn-secondary btn-sm" onClick={toast.dismiss}>No</button>
+                </div>
+            </div>,
+            { autoClose: true, closeOnClick: true }
+        );
+    };
+
+    const confirmDelete = async (bannerId) => {
+        toast.dismiss(); // Close the confirmation toast
+
+
+        try {
+            const response = await axios.delete(`${backend_API}/banner/deleteBanner`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                data: { bannerId }, // Pass bannerId in request body
+            });
+
+            if (response.status === 200) {
+                console.log("Banner deleted successfully");
+                // window.location.reload();
+                toast.success("Banner deleted successfully");
+                setPreview(null);
+            }
+        } catch (error) {
+            toast.error('Error deleting banner. Please try again later.');
+            console.error("Error deleting banner:", error);
+        } finally {
+            setLoading(false);
+        }
+
+
+
+    };
+
     return (
         <section>
+            {/* Add Modal */}
+            {showImageModal && (
+                <ImageModal
+                    image={zoomedImage}
+                    onClose={() => setShowImageModal(false)}
+                />
+            )}
+
+
+
             <div className="container">
                 <div className="row">
+                    {/* Banner Section */}
+
+
                     <div className="p-4 border-0 shadow-xl">
                         <div className="col-12 d-flex">
                             {/* Profile Picture Section */}
@@ -117,51 +296,51 @@ const Card = () => {
                                     <div className="pt-3 w-100">
                                         <h3 className=" pb-1">{user?.name}</h3>
                                         <div className='d-md-none'>
-                                        <div className="rating rating-sm d-flex flex-column text-start">
-                                            <strong className='text-sm' >User :</strong>
-                                            <div>
-                                                {
-                                                    user?.userRatings ? (
-                                                        <div className=' d-flex align-items-center'>
-                                                            {renderStars(user?.userRatings.map((r) => {
-                                                                return r.rating
-                                                            }), 10,)}
-                                                            <span className="ps-2 ">{user?.userAverageRating
+                                            <div className="rating rating-sm d-flex flex-column text-start">
+                                                <strong className='text-sm' >User :</strong>
+                                                <div>
+                                                    {
+                                                        user?.userRatings ? (
+                                                            <div className=' d-flex align-items-center'>
+                                                                {renderStars(user?.userRatings.map((r) => {
+                                                                    return r.rating
+                                                                }), 10,)}
+                                                                <span className="ps-2 ">{user?.userAverageRating
 
-                                                            }</span>
-                                                            {/* <FaStar className= {` ${Usersdata.ratings ? "d-flex" : "d-none"}`}  /> */}
-                                                        </div>
-                                                    ) : (<></>)
-                                                }
+                                                                }</span>
+                                                                {/* <FaStar className= {` ${Usersdata.ratings ? "d-flex" : "d-none"}`}  /> */}
+                                                            </div>
+                                                        ) : (<></>)
+                                                    }
+                                                </div>
+
                                             </div>
+                                            <div className="rating rating-sm d-flex flex-column  text-start">
+                                                <strong className='text-sm' >Provider :</strong>
+                                                <div>
+                                                    {
+                                                        user?.providerRatings ? (
+                                                            <div className=' d-flex align-items-center'>
+                                                                {renderStar(user?.providerRatings.map((r) => {
+                                                                    return r.rating
+                                                                }), 10,)}
+                                                                <span className="ps-2 ">{user?.providerAverageRating
+                                                                }</span>
+                                                                {/* <FaStar className= {` ${Usersdata.ratings ? "d-flex" : "d-none"}`}  /> */}
+                                                            </div>
+                                                        ) : (<></>)
+                                                    }
+                                                </div>
 
-                                        </div>
-                                        <div className="rating rating-sm d-flex flex-column  text-start">
-                                            <strong className='text-sm' >Provider :</strong>
-                                            <div>
-                                                {
-                                                    user?.providerRatings ? (
-                                                        <div className=' d-flex align-items-center'>
-                                                            {renderStar(user?.providerRatings.map((r) => {
-                                                                return r.rating
-                                                            }), 10,)}
-                                                            <span className="ps-2 ">{user?.providerAverageRating
-                                                            }</span>
-                                                            {/* <FaStar className= {` ${Usersdata.ratings ? "d-flex" : "d-none"}`}  /> */}
-                                                        </div>
-                                                    ) : (<></>)
-                                                }
                                             </div>
-
-                                        </div>
                                         </div>
                                     </div>
-                                    
+
                                 </div>
                             </div>
 
                             {/* Profile Details Section */}
-                            <div className="col-7 col-md-8 text-gray-700">
+                            <div className="col-7 col-md-4 text-gray-700">
                                 <div className="px-2 d-none d-md-none ">
                                     <h1 className="fs-3">{user?.name}</h1>
                                 </div>
@@ -223,7 +402,7 @@ const Card = () => {
                                         <h6>Ratings</h6>
                                     </div>
                                     <div className="col-12 col-md-10 ps-3">
-                                        
+
                                         <div className="rating rating-sm d-flex flex-column ">
                                             <strong className='text-sm' >User :</strong>
                                             <div>
@@ -264,10 +443,56 @@ const Card = () => {
                                     </div>
                                 </div>
                             </div>
+
+                            <div className="col-4">
+                                {/* Banner Section */}
+
+                                <div className="col-12">
+                                    {existingBanner ? (
+                                        <div className="position-relative">
+                                            {preview && <img src={preview} alt="Banner Preview" className="w-full h-auto" />}
+
+                                            <img
+                                                src={existingBanner}
+                                                alt="Profile Banner"
+                                                className="img-fluid rounded"
+                                                style={{ maxHeight: '300px', width: '100%', objectFit: 'cover' }}
+                                                onClick={() => handleImageClick(existingBanner)}
+                                            />
+                                            <button
+                                                className="btn btn-danger position-absolute top-0 end-0 m-2"
+
+                                                onClick={() => handleDeleteBanner(bannerId)}
+                                                disabled={loading}
+                                            >
+                                                <MdDelete className="fs-5" />
+
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="border-2 border-dashed rounded p-4 text-center">
+                                            <label className="btn btn-outline-primary" htmlFor="banner-upload" disabled={loading}>
+                                                <MdAddPhotoAlternate className="me-1 fs-5" />
+                                                Add Banner
+                                                <input
+                                                    type="file"
+                                                    id="banner-upload"
+                                                    accept="image/*"
+                                                    onChange={handleBannerChange}
+                                                    hidden
+                                                />
+                                            </label>
+                                        </div>
+                                    )}
+                                </div>
+
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+
         </section>
     );
 };
