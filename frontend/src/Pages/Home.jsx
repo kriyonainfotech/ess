@@ -67,7 +67,7 @@ const Home = () => {
     setLoading(true);
     try {
       const orderResponse = await axios.post(`${backend_API}/payment/create-order`, {
-        amount: "1",
+        amount: "121",
         currency: "INR",
       });
 

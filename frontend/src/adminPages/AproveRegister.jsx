@@ -115,7 +115,7 @@ const UserDetailsModal = ({ user, onClose, onApprove }) => {
                                 <td className="border border-gray-300 px-4 py-2 font-semibold">Referred By</td>
                                 <td className="border border-gray-300 px-4 py-2">
                                     {user.referredBy && user.referredBy.length > 0
-                                        ? user.referredBy.map(referrer => referrer.phone || 'Unknown').join(', ')
+                                        ? user.referredBy.map(referrer => referrer.name || 'Unknown').join(', ')
                                         : 'None'
                                     }
                                 </td>
@@ -437,7 +437,7 @@ const AllUsers = () => {
                                                 <td>{user.businessAddress}</td>
                                                 <td>
                                                     {user.referredBy && user.referredBy.length > 0 ? (
-                                                        user.referredBy.map(referrer => referrer.phone || 'Unknown').join(', ')
+                                                        user.referredBy.map(referrer => referrer.name || 'Unknown').join(', ')
                                                     ) : (
                                                         'None'
                                                     )}
