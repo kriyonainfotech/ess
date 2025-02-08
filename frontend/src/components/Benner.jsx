@@ -12,15 +12,16 @@ import { UserContext } from '../UserContext';
 const backend_API = import.meta.env.VITE_API_URL;
 
 const Banner = ({ BannerImage, setBannerImage }) => {
-      const { user } = useContext(UserContext);
-      
+    const { user } = useContext(UserContext);
+
     const token = JSON.parse(localStorage.getItem('token'));
     const [BannerUser, setBannerUser] = useState({});
     const [offerImage, setOfferImage] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false); // For controlling modal visibility
-
+    const [clickedBannerId, setClickedBannerId] = useState(null);
+    console.log(BannerUser, "BannerUser");
     const GetBanner = async () => {
         setLoading(true);
         setError(null);
@@ -31,24 +32,24 @@ const Banner = ({ BannerImage, setBannerImage }) => {
             if (response.status === 200) {
                 const filteredBanners = response.data.banners.filter(banner => {
                     return (
-                      banner?.userId?._id !== user?._id  
-                    //   banner.userId.address.city.toLowerCase() === user.address.city.toLowerCase()
+                        banner?.userId?._id !== user?._id
+                        //   banner.userId.address.city.toLowerCase() === user.address.city.toLowerCase()
                     );
-                  });
-                
+                });
+
                 setBannerImage(filteredBanners);
                 // setBannerImage(response.data.banners);
             }
         } catch (err) {
-            setError(error?.response?.data?.message ||"Failed to fetch banners. Please try again later.");
-            console.log(err,"Failed to fetch banners. Please try again later.");
+            setError(error?.response?.data?.message || "Failed to fetch banners. Please try again later.");
+            console.log(err, "Failed to fetch banners. Please try again later.");
         } finally {
             setLoading(false);
         }
     };
 
-    const handleOfferBanner = async (bannerId,imageUrl) => {
-       
+    const handleOfferBanner = async (bannerId, imageUrl) => {
+
         try {
             const response = await axios.get(`${backend_API}/banner/getUserByBanner/${bannerId}`, {
                 headers: {
@@ -56,9 +57,11 @@ const Banner = ({ BannerImage, setBannerImage }) => {
                     Authorization: `Bearer ${token}`,
                 },
             });
+            console.log(response.data.user, "response.data.user");
             if (response.status === 200) {
                 setBannerUser(response.data.user);
                 setOfferImage(imageUrl)
+                setClickedBannerId(bannerId);
                 setIsModalOpen(true); // Open the modal after fetching user data
             }
         } catch (error) {
@@ -74,9 +77,9 @@ const Banner = ({ BannerImage, setBannerImage }) => {
         <section className="py-4">
             <div className="container">
                 {loading ? (
-                     <div className="spinner-border text-secondary text-center" role="status">
-                     <span className="sr-only">Loading...</span>
-                   </div>
+                    <div className="spinner-border text-secondary text-center" role="status">
+                        <span className="sr-only">Loading...</span>
+                    </div>
                 ) : error ? (
                     <p className="error-message">{error}</p>
                 ) : (
@@ -116,7 +119,7 @@ const Banner = ({ BannerImage, setBannerImage }) => {
                                     <img
                                         src={image.imageUrl}
                                         alt={`Slide ${index + 1}`}
-                                        onClick={() => handleOfferBanner(image._id,image.imageUrl)}
+                                        onClick={() => handleOfferBanner(image._id, image.imageUrl)}
                                     />
                                 </SwiperSlide>
                             ))}
@@ -134,9 +137,18 @@ const Banner = ({ BannerImage, setBannerImage }) => {
             </div>
 
             {/* Conditionally render the modal */}
-            {isModalOpen && <OfferModal BannerUser={BannerUser} offerImage={offerImage} closeModal={() => setIsModalOpen(false)} />}
+            {isModalOpen && (
+                <OfferModal
+                    BannerUser={BannerUser}
+                    offerImage={offerImage}
+                    closeModal={() => setIsModalOpen(false)}
+                    allBanners={BannerImage}
+                    initialBannerId={clickedBannerId} // Pass the clicked banner ID
+                />
+            )}
         </section>
     );
 };
+
 
 export default Banner;

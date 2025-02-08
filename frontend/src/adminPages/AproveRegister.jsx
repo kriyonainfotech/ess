@@ -261,7 +261,7 @@ const AllUsers = () => {
                         <div className="row">
                             <div className="col-12">
                                 <div className="d-flex justify-content-between align-items-end">
-                                    <div className="col-2 flex justify-content-center">
+                                    <div className="d-none d-md-flex col-md-2 justify-content-center">
                                         <button
                                             onClick={() => navigate('/admin')}
                                             className="btn btn-light d-flex align-items-center gap-2 border hover:bg-gray-100"
@@ -270,10 +270,12 @@ const AllUsers = () => {
                                             <span>Back to Dashboard</span>
                                         </button>
                                     </div>
-                                    <div className="col-8 flex align-items-end justify-content-end">
-                                        <div className="col-12 col-md-5">
+                                    <div className="col-12 col-md-8 flex align-items-end justify-content-between justify-content-md-end">
+                                        <div className="col-6 col-md-5">
                                             <div>
                                                 <label htmlFor="role" className="form-label">Select filter</label>
+
+
                                                 <select
                                                     id="role"
                                                     className="form-select"
@@ -321,7 +323,7 @@ const AllUsers = () => {
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="col-12 col-md-3 mt-4 flex justify-content-center">
+                                        <div className="col-6 col-md-3 mt-4 flex justify-content-center">
                                             <button
                                                 onClick={() => navigate('/admin/users')}
                                                 className="btn btn-primary d-flex align-items-center gap-2"

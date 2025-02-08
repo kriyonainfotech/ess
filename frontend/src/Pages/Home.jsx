@@ -14,6 +14,7 @@ import Footer from '../components/Footer';
 import "../assets/Veryfymodal.css";
 import { toast } from 'react-toastify';
 import { FCMContext } from '../context/FCMContext';
+import Banner from '../components/Benner';
 
 const backend_API = import.meta.env.VITE_API_URL;
 const KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID;
@@ -164,7 +165,7 @@ const Home = () => {
         {/* Single render of categories */}
         {groupedCategoriesAndBanners.length > 0 && (
           <React.Fragment>
-            <Benner BannerImage={bannerImage} setBannerImage={setBannerImage} />
+            <Banner BannerImage={bannerImage} setBannerImage={setBannerImage} />
             <ServieceCategories categories={categories} />
           </React.Fragment>
         )}

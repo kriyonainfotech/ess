@@ -9,20 +9,29 @@ import ProfileIcon from "../../../public/User_icon.webp"
 import starGold from "../../../public/starRating.png"
 import starSilver from "../../../public/startSilver.png"
 import { MdDelete, MdAddPhotoAlternate } from "react-icons/md";
-// import { ToastBar } from 'react-hot-toast';
+import { Link } from 'react-router-dom';
 const backend_API = import.meta.env.VITE_API_URL;
+
 
 const Card = () => {
     const token = JSON.parse(localStorage.getItem('token'));
     const { user } = useContext(UserContext);
     const [loading, setLoading] = useState(false);
     const [preview, setPreview] = useState(null);
+    const [linkCopied, setLinkCopied] = useState(false);
 
+    const referralLink = `https://ees121.com/register?referralCode=${user?.phone}`;
     // State to manage availability
     const [isAvailable, setIsAvailable] = useState(() => {
         const savedStatus = localStorage.getItem('isAvailable');
         return savedStatus === 'true';
     });
+
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(referralLink);
+        setLinkCopied(true);
+        setTimeout(() => setLinkCopied(false), 2000);
+    };
 
     // Update local storage whenever the state changes
     useEffect(() => {
@@ -246,7 +255,7 @@ const Card = () => {
 
             if (response.status === 200) {
                 console.log("Banner deleted successfully");
-                // window.location.reload();
+                window.location.reload();
                 toast.success("Banner deleted successfully");
                 setPreview(null);
             }
@@ -274,14 +283,12 @@ const Card = () => {
 
 
             <div className="container">
-                <div className="row">
+                <div className="row flex" >
                     {/* Banner Section */}
-
-
                     <div className="p-4 border-0 shadow-xl">
-                        <div className="col-12 d-flex">
+                        <div className="col-12 d-flex flex-col flex-md-row">
                             {/* Profile Picture Section */}
-                            <div className="col-5 col-md-4">
+                            <div className="col-12 col-md-4">
                                 <div className="w-100 text-center ">
                                     <div className='d-flex justify-content-center'>
                                         <div className="img-card w-[250px] h-[200px] d-flex overflow-hidden justify-content-center">
@@ -340,7 +347,7 @@ const Card = () => {
                             </div>
 
                             {/* Profile Details Section */}
-                            <div className="col-7 col-md-4 text-gray-700">
+                            <div className="col-12 col-md-4 text-gray-700 justify-content-start">
                                 <div className="px-2 d-none d-md-none ">
                                     <h1 className="fs-3">{user?.name}</h1>
                                 </div>
@@ -442,43 +449,48 @@ const Card = () => {
                                         </div>
                                     </div>
                                 </div>
+
+                                <div className="p-2">
+
+                                    <p className='text-gray'>Your Referral Link :</p>
+                                    <p onClick={copyToClipboard} className="text-blue-500 cursor-pointer">{referralLink}</p>
+                                    {linkCopied && <p className="text-green-500">Link copied!</p>}
+                                    <Link to={`whatsapp://send?text=${referralLink}`} className=' bg-blue text-white text-sm p-1 rounded-1'>
+                                        Share
+                                    </Link>
+                                </div>
                             </div>
 
-                            <div className="col-4">
-                                {/* Banner Section */}
+                            <div className="col-12 col-md-4">
+                                {existingBanner ? (
+                                    <div className="position-relative">
+                                        {preview && <img src={preview} alt="Banner Preview" className="w-full h-auto" />}
 
-                                <div className="col-12">
-                                    {existingBanner ? (
-                                        <div className="position-relative">
-                                            {preview && <img src={preview} alt="Banner Preview" className="w-full h-auto" />}
+                                        <button
+                                            className="btn btn-danger position-absolute top-0 end-0 m-2"
 
-                                            <button
-                                                className="btn btn-danger position-absolute top-0 end-0 m-2"
+                                            onClick={() => handleDeleteBanner(bannerId)}
+                                            disabled={loading}
+                                        >
+                                            <MdDelete className="fs-5" />
 
-                                                onClick={() => handleDeleteBanner(bannerId)}
-                                                disabled={loading}
-                                            >
-                                                <MdDelete className="fs-5" />
-
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div className="border-2 border-dashed rounded p-4 text-center">
-                                            <label className="btn btn-outline-primary" htmlFor="banner-upload" disabled={loading}>
-                                                <MdAddPhotoAlternate className="me-1 fs-5" />
-                                                Add Banner
-                                                <input
-                                                    type="file"
-                                                    id="banner-upload"
-                                                    accept="image/*"
-                                                    onChange={handleBannerChange}
-                                                    hidden
-                                                />
-                                            </label>
-                                        </div>
-                                    )}
-                                </div>
-
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="border-2 border-dashed rounded p-4 text-center">
+                                        <label className="btn btn-outline-primary" htmlFor="banner-upload" disabled={loading}>
+                                            <MdAddPhotoAlternate className="me-1 fs-5" />
+                                            Add Banner
+                                            <input
+                                                type="file"
+                                                id="banner-upload"
+                                                accept="image/*"
+                                                onChange={handleBannerChange}
+                                                hidden
+                                            />
+                                        </label>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
