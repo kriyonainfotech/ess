@@ -18,7 +18,7 @@ app.use(bodyParser.json());
 const cors = require("cors");
 const corsOptions = {
   origin: [
-    "https://ess-frontend-xi.vercel.app",
+    "https://ess-frontend-git-master-kriyona-infotechs-projects.vercel.app",
     "https://ees121.com",
     "https://www.ees121.com",
     "http://localhost:5173",
