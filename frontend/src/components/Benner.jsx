@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { EffectCoverflow, Navigation, Autoplay } from 'swiper/modules';
-import { ArrowLeft, ArrowRight } from 'phosphor-react';
+import { FaArrowRight } from "react-icons/fa";
 import 'swiper/css';
 import 'swiper/css/effect-coverflow';
 import "../assets/Banner/Banner.css";

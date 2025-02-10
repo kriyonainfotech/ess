@@ -11,7 +11,8 @@ import starSilver from "../../../public/startSilver.png"
 import { MdDelete, MdAddPhotoAlternate } from "react-icons/md";
 import { Link } from 'react-router-dom';
 const backend_API = import.meta.env.VITE_API_URL;
-
+import { BsClipboardCheckFill, BsClipboardCheck } from "react-icons/bs";
+import { FaShare } from "react-icons/fa";
 
 const Card = () => {
     const token = JSON.parse(localStorage.getItem('token'));
@@ -20,7 +21,7 @@ const Card = () => {
     const [preview, setPreview] = useState(null);
     const [linkCopied, setLinkCopied] = useState(false);
 
-    const referralLink = `https://ees121.com/register?referralCode=${user?.phone}`;
+    const referralLink = `https://ees121.com/register?referralCode=${user?._id}`;
     // State to manage availability
     const [isAvailable, setIsAvailable] = useState(() => {
         const savedStatus = localStorage.getItem('isAvailable');
@@ -450,13 +451,22 @@ const Card = () => {
                                     </div>
                                 </div>
 
-                                <div className="p-2">
+                                <p className="text-gray-600 font-medium">Your Referral Link:</p>
+                                <div className="flex items-center gap-2 bg-gray-100 px-4 py-2 my-2 rounded-md w-full sm:w-auto">
+                                    {/* Referral Link */}
+                                    <span className="text-blue-600 font-medium truncate">{referralLink}</span>
 
-                                    <p className='text-gray'>Your Referral Link :</p>
-                                    <p onClick={copyToClipboard} className="text-blue-500 cursor-pointer">{referralLink}</p>
-                                    {linkCopied && <p className="text-green-500">Link copied!</p>}
-                                    <Link to={`whatsapp://send?text=${referralLink}`} className=' bg-blue text-white text-sm p-1 rounded-1'>
-                                        Share
+                                    {/* Copy to Clipboard Button */}
+                                    <button onClick={copyToClipboard} className="text-gray-500 hover:text-blue-500">
+                                        {linkCopied ? <BsClipboardCheck size={20} /> : <BsClipboardCheckFill size={20} />}
+                                    </button>
+
+                                    {/* Share Button */}
+                                    <Link
+                                        to={`whatsapp://send?text=${referralLink}`}
+                                        className="text-white bg-orange text-sm p-2 rounded-md flex items-center"
+                                    >
+                                        <FaShare size={16} />
                                     </Link>
                                 </div>
                             </div>

@@ -5,7 +5,7 @@ const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const { v4: uuidv4 } = require("uuid");
-const { distributeReferralRewards } = require("../services/referralService");
+// const { distributeReferralRewards } = require("../services/referralService");
 const { sendNotification } = require("./sendController");
 
 const getPublicIdFromUrl = (url) => {
@@ -291,7 +291,7 @@ const registerUserweb = async (req, res) => {
   console.log("[INFO] 🟢 Starting user registration process...");
 
   try {
-    // 1. Quick validation for file uploads
+    // 1. Validate file uploads
     console.log("[INFO] 📂 Checking uploaded files...");
     const { files } = req;
     if (
@@ -300,10 +300,9 @@ const registerUserweb = async (req, res) => {
       !files?.profilePic?.[0]
     ) {
       console.warn("[WARN] ⚠️ Missing required files");
-      return res.status(400).json({
-        success: false,
-        message: "Please upload all required files",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Please upload all required files" });
     }
 
     // 2. File size validation
@@ -315,10 +314,9 @@ const registerUserweb = async (req, res) => {
       files.profilePic[0].size > MAX_FILE_SIZE
     ) {
       console.warn("[WARN] ⚠️ File size exceeds the limit");
-      return res.status(400).json({
-        success: false,
-        message: "Each file must be less than 2MB",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Each file must be less than 2MB" });
     }
 
     // 3. Extract form data
@@ -339,10 +337,9 @@ const registerUserweb = async (req, res) => {
 
     if (!name || !email || !password || !phone || !address) {
       console.warn("[WARN] ⚠️ Missing required fields");
-      return res.status(400).json({
-        success: false,
-        message: "Missing required fields",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing required fields" });
     }
 
     // 4. Parse address
@@ -353,21 +350,22 @@ const registerUserweb = async (req, res) => {
         typeof address === "string" ? JSON.parse(address) : address;
     } catch (err) {
       console.error("[ERROR] ❌ Invalid address format:", err.message);
-      return res.status(400).json({
-        success: false,
-        message: "Invalid address format",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid address format" });
     }
 
-    // 5. Check for existing user and referral
-    console.log("[INFO] 🔎 Checking existing user and referral...");
+    // 5. Check for existing user and referrer
+    console.log("[INFO] 🔎 Checking existing user and referrer...");
     const [hashedPassword, existingUser, referrer] = await Promise.all([
       bcrypt.hash(password, 10),
       UserModel.findOne({ $or: [{ email }, { phone }] })
         .select("email phone")
         .lean(),
       referralCode
-        ? UserModel.findOne({ phone: referralCode }).select("_id phone").lean()
+        ? UserModel.findOne({ referralCode })
+            .select("_id referrals earnings walletBalance earningsHistory")
+            .lean()
         : null,
     ]);
 
@@ -382,10 +380,12 @@ const registerUserweb = async (req, res) => {
       });
     }
     const uniqueId = await generateUniqueId();
+
     // 6. Create new user
     console.log("[INFO] 🆕 Creating new user...");
     const user = new UserModel({
       userId: uniqueId,
+      // referralCode: uniqueId,
       name,
       email,
       password: hashedPassword,
@@ -396,9 +396,10 @@ const registerUserweb = async (req, res) => {
       businessAddress,
       businessDetaile,
       fcmToken,
-      referralCode: uuidv4(),
       referredBy: referrer ? [referrer._id] : [],
       isAdminApproved: false,
+      walletBalance: 0,
+      earningsHistory: [],
       frontAadhar: files.frontAadhar[0].path,
       backAadhar: files.backAadhar[0].path,
       profilePic: files.profilePic[0].path,
@@ -406,11 +407,12 @@ const registerUserweb = async (req, res) => {
 
     // 7. Save user and update referrer if applicable
     console.log("[INFO] 💾 Saving user to database...");
-    const saveOperations = [user.save()];
+    user.referralCode = user._id;
 
+    const saveOperations = [user.save()];
     if (referrer) {
       console.log(
-        `[INFO] 🔄 Updating referrer (${referrer.phone}) with new referral`
+        `[INFO] 🔄 Updating referrer (${referrer.referralCode}) with new referral`
       );
       saveOperations.push(
         UserModel.updateOne(
@@ -423,7 +425,13 @@ const registerUserweb = async (req, res) => {
     await Promise.all(saveOperations);
     console.log("[SUCCESS] ✅ User registration completed!");
 
-    // 8. Generate token
+    // Update the user with referralCode set to _id
+
+    // 🔹 Call the separate function to distribute rewards
+    if (referrer) {
+      await distributeReferralRewards(user._id, referrer._id);
+    }
+    // 9. Generate token
     console.log("[INFO] 🔐 Generating authentication token...");
     const token = jwt.sign(
       { id: user._id, isAdminApproved: false },
@@ -454,7 +462,46 @@ const registerUserweb = async (req, res) => {
   }
 };
 
-// Helper function to generate unique ID
+const distributeReferralRewards = async (newUserId, referrerId) => {
+  console.log("[INFO] 💰 Distributing referral earnings...");
+  const earningsDistribution = [20, 20, 15, 10]; // Rewards per referral level
+  let currentReferrer = referrerId;
+  let level = 0;
+
+  while (currentReferrer && level < earningsDistribution.length) {
+    const earningAmount = earningsDistribution[level];
+
+    console.log(
+      `[INFO] 💵 Level ${
+        level + 1
+      } - Giving ₹${earningAmount} to ${currentReferrer}`
+    );
+
+    await UserModel.updateOne(
+      { _id: currentReferrer },
+      {
+        $inc: { earnings: earningAmount, walletBalance: earningAmount },
+        $push: {
+          earningsHistory: {
+            amount: earningAmount,
+            sourceUser: newUserId,
+            type: "Referral Bonus",
+          },
+        },
+      }
+    );
+
+    // Move to the next referrer (if exists)
+    const referrerData = await UserModel.findById(currentReferrer).select(
+      "referredBy"
+    );
+    currentReferrer = referrerData?.referredBy?.[0] || null;
+    level++;
+  }
+
+  console.log("[INFO] ✅ Referral earnings distributed!");
+};
+
 async function generateUniqueId() {
   const counterDoc = await mongoose.connection.db
     .collection("counters")
@@ -487,6 +534,7 @@ const updateUsersPaymentVerified = async (req, res) => {
     });
   }
 };
+
 const updateReferralChain = async (referrerId, newUserId) => {
   // Default referral IDs (replace these with actual user IDs from your database)
   const defaultReferrerIds = ["678dd875b7a93b00570bfa5b"];
@@ -512,51 +560,6 @@ const updateReferralChain = async (referrerId, newUserId) => {
     }
   }
 };
-
-// const setReferral = async (req, res) => {
-//   try {
-//     const { referrerPhone, referredPhone } = req.body; // referrer is user1, referred is user2
-
-//     // Validate input
-//     if (!referrerPhone || !referredPhone) {
-//       return res.status(400).json({
-//         message: "Both referrer and referred phone numbers are required.",
-//       });
-//     }
-
-//     // Find both users by their phone numbers
-//     const referrer = await UserModel.findOne({ phone: referrerPhone });
-//     const referred = await UserModel.findOne({ phone: referredPhone });
-
-//     if (!referrer || !referred) {
-//       return res.status(404).json({ message: "One or both users not found." });
-//     }
-
-//     // Check if referred user already has a referrer
-//     if (referred.referredBy.length > 0) {
-//       return res
-//         .status(400)
-//         .json({ message: "Referred user already has a referrer." });
-//     }
-
-//     referred.referredBy = [referrer._id];
-//     await referred.save();
-
-//     referrer.referrals.push(referred._id);
-//     await referrer.save(); // Save the referrer referrer.referrals.push(referred._id);
-
-//     return res.status(200).json({
-//       message: "Referral relationship established successfully.",
-//       referrer: referrer.name,
-//       referred: referred.name,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     return res
-//       .status(500)
-//       .json({ message: "An error occurred.", error: error.message });
-//   }
-// };
 
 const setReferral = async (req, res) => {
   try {

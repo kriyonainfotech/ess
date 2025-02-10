@@ -78,18 +78,12 @@ const userSchema = new mongoose.Schema(
     },
     frontAadhar: {
       type: String,
-      // required: true,
-      // trim: true,
     },
     backAadhar: {
       type: String,
-      // required: true,
-      // trim: true,
     },
     profilePic: {
       type: String,
-      // required: true,
-      // trim: true,
     },
     fcmToken: {
       type: String,
@@ -103,73 +97,64 @@ const userSchema = new mongoose.Schema(
     },
     sended_requests: [
       {
+        requestId: { type: mongoose.Schema.Types.ObjectId, required: true },
         user: {
-          type: Object, // Store the full user object
-          // type: mongoose.Schema.Types.ObjectId,
-          // ref: "User",
-          // required: true,
+          // Renamed for clarity
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
         },
         status: {
           type: String,
-          enum: ["pending", "received", "canceled", "done", "completed"], // Allowed values
+          enum: [
+            "pending",
+            "accepted",
+            "cancelled",
+            "rejected",
+            "completed",
+            "rated",
+          ],
           default: "pending",
         },
         date: { type: Date, default: Date.now },
         providerrating: {
-          value: { type: Number, min: 1, max: 10 }, // Rating value (1-10)
-          comment: { type: String }, // Optional comment
-          date: { type: Date, default: Date.now }, // Date of rating
+          value: { type: Number, min: 1, max: 10, default: null },
+          comment: { type: String, default: null },
+          date: { type: Date, default: Date.now },
         },
       },
     ],
 
     received_requests: [
       {
+        requestId: { type: mongoose.Schema.Types.ObjectId, required: true },
         user: {
-          type: Object, // Store the full user object
-          // type: mongoose.Schema.Types.ObjectId,
-          // ref: "User",
-          // required: true,
-        },
-        status: {
-          type: String,
-          enum: ["pending", "received", "canceled", "done", "completed"], // Allowed values
-          default: "pending",
-        },
-        date: { type: Date, default: Date.now },
-        userrating: {
-          value: { type: Number, min: 1, max: 10 }, // Rating value (1-10)
-          comment: { type: String }, // Optional comment
-          date: { type: Date, default: Date.now }, // Date of rating
-        },
-      },
-    ],
-    ratings: [
-      {
-        user: {
-          type: mongoose.Schema.Types.ObjectId, // User who gave the rating
+          // Renamed for clarity
+          type: mongoose.Schema.Types.ObjectId,
           ref: "User",
           required: true,
         },
-        rating: {
-          type: Number,
-          required: true,
-          min: 1,
-          max: 10, // Restrict ratings between 1 and 5
+        status: {
+          type: String,
+          enum: [
+            "pending",
+            "accepted",
+            "cancelled",
+            "rejected",
+            "completed",
+            "rated",
+          ],
+          default: "pending",
         },
-        comment: {
-          type: String, // Optional feedback
-        },
-        date: {
-          type: Date,
-          default: Date.now,
+        date: { type: Date, default: Date.now },
+
+        userrating: {
+          value: { type: Number, min: 1, max: 10, default: null },
+          comment: { type: String, default: null },
+          date: { type: Date, default: Date.now },
         },
       },
     ],
-    averageRating: {
-      type: Number, // Store the average rating for the user
-      default: 0,
-    },
     userRatings: [
       {
         rater: {
@@ -196,7 +181,6 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-
     // Ratings received as a provider
     providerRatings: [
       {
@@ -224,35 +208,23 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    referralCode: { type: String, unique: true }, // Unique referral code (userId)
+    referredBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Up to 4 levels of referrals
+    referrals: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Direct referrals
 
-    // New fields for referral system
-    referralCode: { type: String, unique: true },
-    referredBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-    referrals: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-    earnings: { type: Number, default: 0 },
-    walletBalance: {
-      type: Number,
-      default: 0,
-    },
+    // Earnings & Wallet
+    earnings: { type: Number, default: 0 }, // Total earnings from referrals
+    walletBalance: { type: Number, default: 0 }, // Available balance in wallet
     earningsHistory: [
       {
-        amount: {
-          type: Number,
-          required: true,
-        },
+        amount: { type: Number, required: true }, // Earned amount from referral
         sourceUser: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "User",
           required: true,
-        },
-        date: {
-          type: Date,
-          default: Date.now,
-        },
-        type: {
-          type: String,
-          required: true,
-        },
+        }, // User who generated the earnings
+        date: { type: Date, default: Date.now }, // Timestamp of earning
+        type: { type: String }, // Type of earning (e.g., "Referral Bonus", "Withdrawal")
       },
     ],
     paymentHistory: [

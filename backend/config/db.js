@@ -4,14 +4,11 @@ require("dotenv").config();
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MongoDB, {
-      serverSelectionTimeoutMS: 20000,
+      serverSelectionTimeoutMS: 50000,
       socketTimeoutMS: 30000,
       connectTimeoutMS: 20000,
-      maxPoolSize: 10,
-      minPoolSize: 2,
-      retryWrites: true,
-      retryReads: true,
-      w: "majority",
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
     });
 
     console.log(`[INFO] MongoDB Connected: ${conn.connection.host}`);

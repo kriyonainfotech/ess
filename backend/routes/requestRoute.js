@@ -14,9 +14,14 @@ const {
   workDoneMobile,
   getSendedRequestsMobile,
   getReceivedRequestsMobile,
+  getSentRequests,
+  getReceivedRequests,
+  updateRequestStatus,
+  getUsersWithRequestsCounts,
+  updateRequestStatusMobile,
 } = require("../controllers/requestController");
 const { verifyToken } = require("../middleware/auth");
-
+const userModel = require("../model/user");
 const {
   getNotifications,
   deleteNotification,
@@ -32,6 +37,9 @@ router.post("/getUserRequestsMobile", getUserRequestsMobile);
 
 router.get("/getAllRequests", getAllRequests);
 
+router.get("/getSentRequests", verifyToken, getSentRequests);
+router.get("/getReceivedRequests", verifyToken, getReceivedRequests);
+
 router.post("/receivedRequest", verifyToken, receivedRequest);
 router.post("/receivedRequestMobile", receivedRequestMobile);
 
@@ -40,6 +48,9 @@ router.post("/cancelRequestMobile", cancelRequestMobile);
 
 router.post("/workDone", verifyToken, workDone);
 router.post("/workDoneMobile", workDoneMobile);
+
+router.post("/updateRequestStatus", verifyToken, updateRequestStatus);
+router.post("/updateStatusMobile", updateRequestStatusMobile);
 
 router.get("/getNotifications", verifyToken, getNotifications);
 router.post("/getNotificationsMobile", getNotificationsMobile);
@@ -50,7 +61,39 @@ router.delete("/deleteRequest", deleteRequest);
 
 router.post("/getSendedRequestsMobile", getSendedRequestsMobile);
 router.post("/getReceivedRequestsMobile", getReceivedRequestsMobile);
+router.get("/count", getUsersWithRequestsCounts);
+// Delete all sent requests for the authenticated user
+router.delete("/deleteSentRequests", async (req, res) => {
+  try {
+    const { userId } = req.body;
 
-// router.post("/abc", fixUserData);
+    // Delete all sent requests for the user
+    const updatedUser = await userModel.findByIdAndUpdate(
+      userId,
+      { $set: { received_requests: [] } }, // Empty the array
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "All sent requests have been deleted.",
+      sendedRequests: [], // Return empty array
+    });
+  } catch (error) {
+    console.error("Error deleting sent requests:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error.",
+      error: error.message,
+    });
+  }
+});
 
 module.exports = router;

@@ -8,6 +8,7 @@ import ProfileIcon from "../../public/User_icon.webp";
 import starGold from "../../public/starRating.png";
 import starSilver from "../../public/startSilver.png";
 import '../assets/Modal/Modal.css';
+import { FaArrowRight } from 'react-icons/fa'; import { FaArrowLeft } from "react-icons/fa6";
 const OfferModal = ({ BannerUser, offerImage, closeModal, allBanners, initialBannerId }) => {
   const { user } = useContext(UserContext);
   const navigate = useNavigate();
@@ -169,11 +170,14 @@ const OfferModal = ({ BannerUser, offerImage, closeModal, allBanners, initialBan
                 )}
               </div>
               <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => navigateOffer(-1)}>⬅️</button>
-                <button className="btn btn-primary" onClick={() => navigateOffer(1)}>➡️</button>
+                <button className="btn btn-secondary" onClick={() => navigateOffer(-1)}>
+                  <FaArrowLeft />
+                </button>
+                <button className="btn btn-primary" onClick={() => navigateOffer(1)}><FaArrowRight /></button>
                 <button className="btn btn-success" onClick={handleContactNowClick}>Contact Now</button>
               </div>
             </div>
+
           </div>
         </div>
         {/* 🔥 Contact Now Modal (Inside OfferModal) */}
@@ -217,88 +221,3 @@ const OfferModal = ({ BannerUser, offerImage, closeModal, allBanners, initialBan
 };
 export default OfferModal;
 
-// import React, { useEffect, useState, useContext } from 'react';
-// import { IoClose } from 'react-icons/io5';
-// import { UserContext } from '../UserContext';
-// import { useNavigate } from 'react-router-dom';
-// import ProfileIcon from '../../public/User_icon.webp';
-// import '../assets/Modal/ModernModal.css';
-// const OfferModal = ({ BannerUser, offerImage, closeModal, allBanners }) => {
-//   const { user } = useContext(UserContext);
-//   const navigate = useNavigate();
-
-//   const [currentIndex, setCurrentIndex] = useState(0);
-//   const [currentOffer, setCurrentOffer] = useState(null);
-//   const [popupVisible, setPopupVisible] = useState(false);
-//   useEffect(() => {
-//     if (allBanners?.length > 0 && BannerUser?._id) {
-//       const foundIndex = allBanners.findIndex(b => b._id === BannerUser._id);
-//       setCurrentIndex(foundIndex !== -1 ? foundIndex : 0);
-//     }
-//   }, [BannerUser, allBanners]);
-//   useEffect(() => {
-//     if (allBanners.length > 0) {
-//       setCurrentOffer(allBanners[currentIndex]);
-//     }
-//   }, [currentIndex, allBanners]);
-//   const navigateOffer = (direction) => {
-//     let newIndex = (currentIndex + direction + allBanners.length) % allBanners.length;
-//     setCurrentIndex(newIndex);
-//   };
-//   const handleContactNowClick = () => {
-//     setPopupVisible(true);
-//   };
-//   const handleClosePopup = () => {
-//     setPopupVisible(false);
-//   };
-//   return (
-//     <div className="modal-overlay">
-//       <div className="modal-wrapper glass-effect animate-modal">
-//         <div className="modal-header">
-//           <h5 className="modal-title">View Offer</h5>
-//           <button className="close-btn" onClick={closeModal}><IoClose size={24} /></button>
-//         </div>
-//         <div className="modal-body">
-//           {currentOffer ? (
-//             <div className="offer-content">
-//               <img src={currentOffer.imageUrl} className="offer-banner" alt="Offer" />
-//               <div className="offer-details">
-//                 <img src={currentOffer.userId?.profilePic || ProfileIcon} className="profile-pic" alt="User" />
-//                 <h5>{currentOffer.userId?.name}</h5>
-//                 <p>{currentOffer.userId?.email}</p>
-//                 <p className="category">{currentOffer.userId?.businessCategory}</p>
-//               </div>
-//             </div>
-//           ) : (
-//             <p>Loading user data...</p>
-//           )}
-//         </div>
-//         <div className="modal-footer">
-//           <button className="btn btn-secondary btn-glass" onClick={() => navigateOffer(-1)}>⬅️</button>
-//           <button className="btn btn-primary btn-glass" onClick={() => navigateOffer(1)}>➡️</button>
-//           <button className="btn btn-success btn-glow" onClick={handleContactNowClick}>Contact Now</button>
-//         </div>
-//       </div>
-//       {popupVisible && (
-//         <div className="contact-form-modal animate-popup">
-//           <div className="modal-content glass-effect">
-//             <div className="modal-header">
-//               <h5 className="modal-title">Send Request</h5>
-//               <button className="close-btn" onClick={handleClosePopup}><IoClose size={24} /></button>
-//             </div>
-//             <div className="modal-body">
-//               <form>
-//                 <textarea className="form-control" placeholder="Enter your request details..." required />
-//                 <div className="modal-actions">
-//                   <button className="btn btn-secondary" onClick={handleClosePopup}>Cancel</button>
-//                   <button className="btn btn-success btn-glow">Send Request</button>
-//                 </div>
-//               </form>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
-// export default OfferModal;
