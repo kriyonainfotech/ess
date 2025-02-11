@@ -287,19 +287,15 @@ const loginUser = async (req, res) => {
 };
 
 const registerUserweb = async (req, res) => {
-  const startTime = Date.now();
-  console.log("[INFO] 🟢 Starting user registration process...");
-
   try {
     // 1. Validate file uploads
-    console.log("[INFO] 📂 Checking uploaded files...");
+    console.log("[INFO] 🟢 Starting user registration process...");
     const { files } = req;
     if (
       !files?.frontAadhar?.[0] ||
       !files?.backAadhar?.[0] ||
       !files?.profilePic?.[0]
     ) {
-      console.warn("[WARN] ⚠️ Missing required files");
       return res
         .status(400)
         .json({ success: false, message: "Please upload all required files" });
@@ -320,7 +316,7 @@ const registerUserweb = async (req, res) => {
     }
 
     // 3. Extract form data
-    console.log("[INFO] 📝 Extracting form data...");
+
     const {
       name,
       email,
@@ -334,9 +330,9 @@ const registerUserweb = async (req, res) => {
       fcmToken,
       referralCode,
     } = req.body;
+    console.log("[INFO] 📝 Extracting form data...", req.body);
 
     if (!name || !email || !password || !phone || !address) {
-      console.warn("[WARN] ⚠️ Missing required fields");
       return res
         .status(400)
         .json({ success: false, message: "Missing required fields" });
@@ -357,18 +353,10 @@ const registerUserweb = async (req, res) => {
 
     // 5. Check for existing user and referrer
     console.log("[INFO] 🔎 Checking existing user and referrer...");
-    const [hashedPassword, existingUser, referrer] = await Promise.all([
-      bcrypt.hash(password, 10),
-      UserModel.findOne({ $or: [{ email }, { phone }] })
-        .select("email phone")
-        .lean(),
-      referralCode
-        ? UserModel.findOne({ referralCode })
-            .select("_id referrals earnings walletBalance earningsHistory")
-            .lean()
-        : null,
-    ]);
-
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const existingUser = await UserModel.findOne({
+      $or: [{ email }, { phone }],
+    });
     if (existingUser) {
       console.warn("[WARN] ⚠️ User already exists:", existingUser);
       return res.status(400).json({
@@ -379,13 +367,26 @@ const registerUserweb = async (req, res) => {
             : "Phone number already exists",
       });
     }
+
+    // Find referrer based on referralCode (which is a user ID)
+    let referrer = null;
+    if (referralCode) {
+      referrer = await UserModel.findById(referralCode);
+      if (!referrer) {
+        console.warn("[WARN] ⚠️ Invalid referral code provided.");
+        return res.status(400).json({
+          success: false,
+          message: "Invalid referral code",
+        });
+      }
+    }
+
     const uniqueId = await generateUniqueId();
 
     // 6. Create new user
     console.log("[INFO] 🆕 Creating new user...");
     const user = new UserModel({
       userId: uniqueId,
-      // referralCode: uniqueId,
       name,
       email,
       password: hashedPassword,
@@ -396,6 +397,7 @@ const registerUserweb = async (req, res) => {
       businessAddress,
       businessDetaile,
       fcmToken,
+      referralCode,
       referredBy: referrer ? [referrer._id] : [],
       isAdminApproved: false,
       walletBalance: 0,
@@ -406,40 +408,25 @@ const registerUserweb = async (req, res) => {
     });
 
     // 7. Save user and update referrer if applicable
-    console.log("[INFO] 💾 Saving user to database...");
     user.referralCode = user._id;
+    await user.save();
+    console.log("[SUCCESS] ✅ User registration completed!", user);
 
-    const saveOperations = [user.save()];
+    // Update referrer's referral list
     if (referrer) {
-      console.log(
-        `[INFO] 🔄 Updating referrer (${referrer.referralCode}) with new referral`
-      );
-      saveOperations.push(
-        UserModel.updateOne(
-          { _id: referrer._id },
-          { $push: { referrals: user._id } }
-        )
-      );
+      await UserModel.findByIdAndUpdate(referrer._id, {
+        $push: { referrals: user._id },
+      });
+      console.log(`[INFO] 🔗 User added to ${referrer._id}'s referral list`);
     }
 
-    await Promise.all(saveOperations);
-    console.log("[SUCCESS] ✅ User registration completed!");
-
-    // Update the user with referralCode set to _id
-
-    // 🔹 Call the separate function to distribute rewards
-    if (referrer) {
-      await distributeReferralRewards(user._id, referrer._id);
-    }
     // 9. Generate token
-    console.log("[INFO] 🔐 Generating authentication token...");
     const token = jwt.sign(
       { id: user._id, isAdminApproved: false },
       process.env.JWT_SECRET,
       { expiresIn: "24h" }
     );
-
-    console.log(`[INFO] ⏳ Total process time: ${Date.now() - startTime}ms`);
+    console.log("[INFO] 🔐 Generating authentication token...");
 
     return res.status(200).json({
       success: true,
@@ -457,49 +444,9 @@ const registerUserweb = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Registration failed. Please try again.",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+      error: error.message,
     });
   }
-};
-
-const distributeReferralRewards = async (newUserId, referrerId) => {
-  console.log("[INFO] 💰 Distributing referral earnings...");
-  const earningsDistribution = [20, 20, 15, 10]; // Rewards per referral level
-  let currentReferrer = referrerId;
-  let level = 0;
-
-  while (currentReferrer && level < earningsDistribution.length) {
-    const earningAmount = earningsDistribution[level];
-
-    console.log(
-      `[INFO] 💵 Level ${
-        level + 1
-      } - Giving ₹${earningAmount} to ${currentReferrer}`
-    );
-
-    await UserModel.updateOne(
-      { _id: currentReferrer },
-      {
-        $inc: { earnings: earningAmount, walletBalance: earningAmount },
-        $push: {
-          earningsHistory: {
-            amount: earningAmount,
-            sourceUser: newUserId,
-            type: "Referral Bonus",
-          },
-        },
-      }
-    );
-
-    // Move to the next referrer (if exists)
-    const referrerData = await UserModel.findById(currentReferrer).select(
-      "referredBy"
-    );
-    currentReferrer = referrerData?.referredBy?.[0] || null;
-    level++;
-  }
-
-  console.log("[INFO] ✅ Referral earnings distributed!");
 };
 
 async function generateUniqueId() {
@@ -756,7 +703,7 @@ const getalluser = async (req, res) => {
     const user = await UserModel.find({})
       .select("-received_requests -sended_requests")
       .populate("referredBy", "name phone");
-    // console.log(user);
+    // console.log(user.referredBy);
 
     return res.status(200).json({
       success: true,
@@ -1029,22 +976,72 @@ const updateProfileMobile = async (req, res) => {
 const deleteUser = async (req, res) => {
   try {
     const userId = req.body.id;
-    const user = await UserModel.findByIdAndDelete(userId);
+
+    // Fetch user before deletion
+    const user = await UserModel.findById(userId);
     if (!user) {
       return res.status(404).send({
         success: false,
         message: "User not found",
       });
     }
+
+    console.log(`[INFO] 🔄 Removing user-related data for user: ${userId}`);
+
+    // Remove the user's requests from both users
+    await UserModel.updateMany(
+      { "sended_requests.user": userId },
+      { $pull: { sended_requests: { user: userId } } }
+    );
+
+    await UserModel.updateMany(
+      { "received_requests.user": userId },
+      { $pull: { received_requests: { user: userId } } }
+    );
+
+    console.log("[INFO] ✅ Cleared all related requests");
+
+    // Remove user ID from referrer's referral list if applicable
+    if (user.referredBy) {
+      await UserModel.updateOne(
+        { _id: user.referredBy },
+        { $pull: { referrals: userId } }
+      );
+      console.log("[INFO] ✅ Removed user from referrer’s referral list");
+    }
+
+    // Delete user's images from Cloudinary (Aadhar + Profile Pic)
+    const cloudinary = require("cloudinary").v2;
+
+    const deleteCloudinaryImage = async (imageUrl) => {
+      if (imageUrl) {
+        const publicId = imageUrl.split("/").pop().split(".")[0]; // Extract public ID
+        await cloudinary.uploader.destroy(publicId);
+      }
+    };
+
+    await deleteCloudinaryImage(user.profilePic);
+    await deleteCloudinaryImage(user.frontAadhar);
+    await deleteCloudinaryImage(user.backAadhar);
+
+    console.log(
+      "[INFO] ✅ Deleted user's profile and Aadhar images from Cloudinary"
+    );
+
+    // Finally, delete user
+    await UserModel.findByIdAndDelete(userId);
+
+    console.log("[SUCCESS] 🚀 User deleted successfully");
+
     return res.status(200).send({
       success: true,
       message: "User deleted successfully",
     });
   } catch (error) {
-    console.error(error);
+    console.error("[ERROR] ❌", error);
     return res.status(500).send({
       success: false,
-      message: "An error occurred while updating the profile",
+      message: "An error occurred while deleting the user",
       error: error.message,
     });
   }
@@ -1293,48 +1290,6 @@ const updateRoleByEmail = async (req, res) => {
   }
 };
 
-// const getUsersByCategory = async (req, res) => {
-//   try {
-//     const { businessCategory } = req.body; // Extract businessCategory from the request body
-
-//     // Validate businessCategory
-//     if (!businessCategory) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "businessCategory is required and must be an array.",
-//       });
-//     }
-
-//     // Find users by businessCategory
-//     const users = await UserModel.find({
-//       businessCategory: { $in: businessCategory },
-//     }).select(
-//       "-password -received_requests -sended_requests -frontAadhar -backAadhar -fcmToken -earningsHistory -paymentHistory -referrals -notifications -referredBy -earnings -walletBalance "
-//     ); // Exclude sensitive or unwanted fields
-
-//     if (users.length === 0) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "No users found for the specified category",
-//       });
-//     }
-
-//     // Respond with the list of users
-//     return res.status(200).json({
-//       success: true,
-//       message: "Users fetched successfully.",
-//       users,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     return res.status(500).json({
-//       success: false,
-//       message: "An error occurred while fetching users",
-//       error: error.message,
-//     });
-//   }
-// };
-
 const createTransporter = () => {
   return nodemailer.createTransport({
     service: "Gmail", // or your email service
@@ -1504,6 +1459,21 @@ const getrequests = async (req, res) => {
   }
 };
 
+const getUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await UserModel.findById(id).select(
+      "-received_requests -sended_requests -password -resetCode -resetCodeExpires"
+    );
+    res.status(200).json({ success: true, user });
+  } catch (error) {
+    console.log("Error fetching user by ID:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -1529,4 +1499,5 @@ module.exports = {
   updateUsersPaymentVerified,
   getrequests,
   updateReferralChain,
+  getUserById,
 };

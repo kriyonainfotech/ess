@@ -197,11 +197,15 @@ function Registration() {
               <div className='px-16'>
                 {
                   referralCode ? (
-                    <input
-                      type="text"
-                      value={referralCode}
-                      onChange={(e) => setReferralCode(e.target.value)}
-                      className="w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-2" placeholder="Name" />
+                    <div className="">
+                      <label htmlFor="referralCode" className='text-gray text-sm'>Referral Code :</label>
+                      <input
+                        type="text"
+                        value={referralCode}
+                        // onChange={(e) => setReferralCode(e.target.value)}
+                        disabled
+                        className="w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-2" placeholder="Name" />
+                    </div>
                     // {errors.name && <span className="error text-orange text-orange text-sm">{errors.name}</span>}
 
                   ) : (

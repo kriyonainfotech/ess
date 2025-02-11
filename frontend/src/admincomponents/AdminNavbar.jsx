@@ -40,10 +40,16 @@ const AdminNavbar = () => {
             icon: <PiLineVertical />
         },
         {
-            title: 'PrivacyPolicy',
-            link: '/privacyPolicy',
+            title: 'Team',
+            link: '/team',
             icon: <PiLineVertical />
         },
+        {
+            title: 'Wallete',
+            link: '/wallete',
+            icon: <PiLineVertical />
+        },
+
         // Conditionally render AboutUs based on login status
         ...(!user ? [
             {

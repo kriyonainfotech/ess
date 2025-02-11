@@ -21,6 +21,7 @@ const {
   forgotPassword,
   verifyCode,
   resetPassword,
+  getUserById,
   setReferral,
 } = require("../controllers/authController");
 const multer = require("multer");
@@ -101,6 +102,7 @@ router.put("/UpdateUser", UpdateUser);
 router.get("/getAdmin", isAdmin, getAdmin);
 router.get("/getAllUser", getalluser);
 router.get("/getUser", verifyToken, getUser);
+router.get("/getUserById/:id", getUserById);
 router.get("/getUserMobile", getUserMobile);
 router.get("/logout", logout);
 router.put("/setUserStatus", verifyToken, setUserStatus);

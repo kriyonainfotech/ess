@@ -106,7 +106,7 @@ const EditUser = () => {
     e.preventDefault();
 
     const newAddress = { area, city, state, country, pincode };
-    const fullData = { userId: location.state._id, name, email, phone, address: newAddress, businessCategory, businessName, businessAddress,businessDetaile };
+    const fullData = { userId: location.state._id, name, email, phone, address: newAddress, businessCategory, businessName, businessAddress, businessDetaile };
 
     setLoading(true);  // Show loading spinner or disable the button
 
@@ -118,11 +118,11 @@ const EditUser = () => {
 
       if (response.status === 200) {
         toast(response.data.message)
-        navigate('/admin');
+        navigate(-1);
       }
     } catch (error) {
       console.error(error);
-      setError(error?.response?.data?.message ||'Failed to update user. Please try again.');
+      setError(error?.response?.data?.message || 'Failed to update user. Please try again.');
     } finally {
       setLoading(false);  // Hide loading spinner
     }
@@ -130,11 +130,12 @@ const EditUser = () => {
 
   return (
     <>
-      <AdminHeader/>
-      <AdminSidebar/>
+      <AdminHeader />
+      <AdminSidebar />
       <div className="bg-gray-200 pt-15 flex items-center mt-24 justify-center">
         <div className="w-[600px] bg-white rounded-lg overflow-hidden shadow-md mt-5 mx-2">
           <div className="py-3 px-6 grid grid-cols-1 gap-6">
+
             <div className="flex flex-col items-center">
               <h3 className="text-3xl font-semibold text-red-500 pt-3">Edit User</h3>
             </div>

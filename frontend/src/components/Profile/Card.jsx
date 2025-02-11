@@ -21,17 +21,23 @@ const Card = () => {
     const [preview, setPreview] = useState(null);
     const [linkCopied, setLinkCopied] = useState(false);
 
-    const referralLink = `https://ees121.com/register?referralCode=${user?._id}`;
+    const referralLink = `${window.location.origin}/register?referralCode=${user?._id}`;
+
     // State to manage availability
     const [isAvailable, setIsAvailable] = useState(() => {
         const savedStatus = localStorage.getItem('isAvailable');
         return savedStatus === 'true';
     });
 
-    const copyToClipboard = () => {
-        navigator.clipboard.writeText(referralLink);
-        setLinkCopied(true);
-        setTimeout(() => setLinkCopied(false), 2000);
+    const copyToClipboard = async () => {
+        try {
+            await navigator.clipboard.writeText(referralLink);
+            setLinkCopied(true);
+
+            setTimeout(() => setLinkCopied(false), 2000); // Reset after 2 seconds
+        } catch (error) {
+            console.error("Failed to copy:", error);
+        }
     };
 
     // Update local storage whenever the state changes

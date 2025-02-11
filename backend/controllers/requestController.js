@@ -2068,16 +2068,28 @@ const getReceivedRequestsMobile = async (req, res) => {
 
 const getUsersWithRequestsCounts = async (req, res) => {
   try {
-    const result = await User.updateMany({}, [
-      { $set: { referralCode: { $toString: "$_id" } } }, // Convert _id to string
-    ]);
+    const users = await User.find({
+      referredBy: { $exists: true, $ne: null },
+    });
 
-    console.log(result, "result");
+    const bulkOperations = users
+      .filter((user) => mongoose.Types.ObjectId.isValid(user.referredBy)) // Ensure valid ObjectId
+      .map((user) => ({
+        updateOne: {
+          filter: { _id: user._id },
+          update: {
+            $set: { referredBy: new mongoose.Types.ObjectId(user.referredBy) },
+          },
+        },
+      }));
 
-    return res.json({
+    if (bulkOperations.length > 0) {
+      await UserModel.bulkWrite(bulkOperations);
+    }
+
+    return res.status(200).json({
       success: true,
-      message: "Referral codes updated successfully! 🎉",
-      modifiedCount: result.modifiedCount,
+      message: `Converted ${bulkOperations.length} users' referredBy field to ObjectId.`,
     });
   } catch (error) {
     console.error("🔥 Error updating referral codes:", error);

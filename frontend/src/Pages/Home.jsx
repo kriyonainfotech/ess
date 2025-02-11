@@ -60,8 +60,6 @@ const Home = () => {
     }];
   }, [categories, bannerImage]);
 
-
-
   // Handle Payment Verification
   const handlePaymentVerify = async (userId) => {
     setLoading(true);

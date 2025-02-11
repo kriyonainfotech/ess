@@ -236,12 +236,19 @@ const getUsersByBCategory = async (req, res) => {
 
 const updateUserAddressAndAadhar = async (req, res) => {
   try {
-    const userId = req.user._id; // Get user ID from auth middleware
-    console.log("req.user", req.user);
-    console.log("userId", userId);
-    const { permanentAddress, aadharNumber } = req.body;
-    console.log("permanentAddress", permanentAddress);
-    console.log("aadharNumber", aadharNumber);
+    const { userId, permanentAddress, aadharNumber } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required.",
+      });
+    }
+
+    console.log("User ID:", userId);
+    console.log("Permanent Address:", permanentAddress);
+    console.log("Aadhar Number:", aadharNumber);
+
     // Validate Aadhar number format if provided
     if (aadharNumber) {
       const aadharRegex = /^\d{12}$/;
@@ -258,19 +265,25 @@ const updateUserAddressAndAadhar = async (req, res) => {
         _id: { $ne: userId },
       });
 
-      console.log("existingUser", existingUser);
       if (existingUser) {
         return res.status(400).json({
           success: false,
-          message: "Aadhar number already registered with another user",
+          message: "Aadhar number already registered with another user.",
         });
       }
     }
 
-    // Build update object
+    // Prepare update object
     const updateFields = {};
     if (permanentAddress) updateFields.permanentAddress = permanentAddress;
     if (aadharNumber) updateFields.aadharNumber = aadharNumber;
+
+    if (Object.keys(updateFields).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid fields to update.",
+      });
+    }
 
     // Update user document
     const updatedUser = await UserModel.findByIdAndUpdate(
@@ -279,27 +292,26 @@ const updateUserAddressAndAadhar = async (req, res) => {
       {
         new: true,
         runValidators: true,
-        select: "permanentAddress aadharNumber", // Only return these fields
       }
-    );
+    ).select("permanentAddress aadharNumber"); // Return only required fields
 
     if (!updatedUser) {
       return res.status(404).json({
         success: false,
-        message: "User not found",
+        message: "User not found.",
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      message: "User details updated successfully",
+      message: "User details updated successfully.",
       data: updatedUser,
     });
   } catch (error) {
     console.error("Error in updateUserAddressAndAadhar:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Error updating user details",
+      message: "Error updating user details.",
       error: error.message,
     });
   }
