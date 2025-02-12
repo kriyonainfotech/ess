@@ -9,8 +9,14 @@ import starGold from "../../public/starRating.png";
 import starSilver from "../../public/startSilver.png";
 import '../assets/Modal/Modal.css';
 import { FaArrowRight } from 'react-icons/fa'; import { FaArrowLeft } from "react-icons/fa6";
+import axios from 'axios';
+const backend_API = import.meta.env.VITE_API_URL;
+
 const OfferModal = ({ BannerUser, offerImage, closeModal, allBanners, initialBannerId }) => {
   const { user } = useContext(UserContext);
+
+  const token = JSON.parse(localStorage.getItem('token'));
+
   const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentOffer, setCurrentOffer] = useState(null);
@@ -67,14 +73,13 @@ const OfferModal = ({ BannerUser, offerImage, closeModal, allBanners, initialBan
     console.log(user, "user");
     if (!user) {
       toast.error("Please login first");
-      navigete('/login')
+      navigate('/login')
       return;
     }
-    if (offer?.userstatus === 'unavailable') {
+    if (currentOffer?.userId?.userstatus === 'unavailable') {
       toast.error("User is unavailable");
       return;
     }
-    setLoading(true);
     try {
       const response = await axios.post(`${backend_API}/request/sentRequest`, { receiverId: userId }, {
         headers: {
@@ -84,22 +89,17 @@ const OfferModal = ({ BannerUser, offerImage, closeModal, allBanners, initialBan
       });
       console.log(response, "banner");
       if (response.status === 200) {
-        // toast(response.data.message);
-        // setRequestStatus('pending'); // Update status to pending
         toast("Request Sent Successfully!");
-        navigete('/work')
+        navigate('/work')
         setLoading(false);
 
       } else {
         toast.error(error?.response?.data?.message);
-        setLoading(false);
       }
     } catch (error) {
       console.log('Error sending request:', error.response?.data || error);
-      toast.error(error.response.data.message);
-      setLoading(false);
+      toast.error(error?.response?.data?.message || 'error in sending request');
     } finally {
-      setLoading(false);
     }
   };
 
@@ -182,35 +182,37 @@ const OfferModal = ({ BannerUser, offerImage, closeModal, allBanners, initialBan
         </div>
         {/* 🔥 Contact Now Modal (Inside OfferModal) */}
         {popupVisible && (
-          <div className="contact-form-modal">
-            <div className="modal-content shadow-lg bg-white p-3">
-              <div className="modal-header flex justify-between items-center border-b pb-2">
-                <h5 className="modal-title text-lg font-semibold">Send Request</h5>
-                <button
-                  type="button"
-                  className="close-btn py-1 px-2 rounded-lg"
-                  onClick={handleClosePopup}
-                >
-                  <IoClose size={24} />
-                </button>
-              </div>
-              <div className="modal-body p-4">
-                <form>
-                  <textarea
-                    id="serviceRequest"
-                    className="form-control w-100 mb-3"
-                    placeholder="Enter your service request details..."
-                    required
-                  />
-                  <div className="text-right">
-                    <button type="button" className="btn btn-secondary me-2" onClick={handleClosePopup}>
-                      Cancel
-                    </button>
-                    <button type="button" className="btn bg-green text-white" onClick={() => sendRequest(currentOffer.userId._id)}>
-                      Send Request
-                    </button>
-                  </div>
-                </form>
+          <div className=''>
+            <div className="contact-form-modal">
+              <div className="modal-content shadow-lg bg-white p-3">
+                <div className="modal-header flex justify-between items-center border-b pb-2">
+                  <h5 className="modal-title text-lg font-semibold">Send Request</h5>
+                  <button
+                    type="button"
+                    className="close-btn py-1 px-2 rounded-lg"
+                    onClick={handleClosePopup}
+                  >
+                    <IoClose size={24} />
+                  </button>
+                </div>
+                <div className="modal-body p-4">
+                  <form>
+                    <textarea
+                      id="serviceRequest"
+                      className="form-control w-100 mb-3"
+                      placeholder="Enter your service request details..."
+                      required
+                    />
+                    <div className="text-right">
+                      <button type="button" className="btn btn-secondary me-2" onClick={handleClosePopup}>
+                        Cancel
+                      </button>
+                      <button type="button" className="btn bg-green text-white" onClick={() => sendRequest(currentOffer.userId._id)}>
+                        Send Request
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </div>
             </div>
           </div>

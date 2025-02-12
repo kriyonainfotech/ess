@@ -2,6 +2,7 @@ const Banner = require("../model/banner");
 const cloudinary = require("cloudinary").v2;
 const Category = require("../model/category");
 const User = require("../model/user");
+
 const getPublicIdFromUrl = (url) => {
   const regex = /\/(?:v\d+\/)?([^\/]+)\/([^\/]+)\.[a-z]+$/;
   const match = url.match(regex);
@@ -10,6 +11,7 @@ const getPublicIdFromUrl = (url) => {
   }
   return null;
 };
+
 const addCategory = async (req, res) => {
   try {
     const { categoryName } = req.body; // Extract category name from the request body
@@ -54,33 +56,41 @@ const updateCategory = async (req, res) => {
     if (!category) {
       return res
         .status(404)
-        .json({ success: false, message: "category not found" });
+        .json({ success: false, message: "Category not found" });
     }
-    let imageUrl = category.image;
+
+    let imageUrl = category.image; // Keep existing image if no new image is uploaded
+
     if (req.file) {
+      // Delete the old image from Cloudinary
       if (imageUrl) {
-        const publicId = getPublicIdFromUrl(imageUrl);
+        const publicId = getPublicIdFromUrl(imageUrl); // Extract Cloudinary public ID
         if (publicId) {
-          const result = await cloudinary.uploader.destroy(publicId);
+          await cloudinary.uploader.destroy(publicId);
         } else {
           console.log("Could not extract publicId from URL:", imageUrl);
         }
       }
+
+      // Save the new image URL
       imageUrl = req.file.path;
     }
-    category.imageUrl = imageUrl;
+
+    category.image = imageUrl; // Ensure the field name matches the database
     category.categoryName = categoryName;
     await category.save();
+
     res.status(200).json({
       success: true,
-      message: "banner updated successfully",
+      message: "Category updated successfully",
       category,
     });
   } catch (error) {
-    console.error("Error in bannerupdate:", error);
+    console.error("Error updating category:", error);
     res.status(500).json({ success: false, message: "Server error", error });
   }
 };
+
 const deleteCategory = async (req, res) => {
   try {
     const { categoryId } = req.body;

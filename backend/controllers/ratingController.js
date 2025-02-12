@@ -312,107 +312,176 @@ const addRating = async (req, res) => {
 
 const addRatingMobile = async (req, res) => {
   try {
-    const { userId, serviceProviderId, rating } = req.body;
+    const { senderId, requestId, receiverId, ratingValue, comment } = req.body;
 
-    // Validate input
-    if (!serviceProviderId || !rating || !userId) {
-      return res.status(400).json({
-        message: "User ID, Service provider ID, and rating are required.",
+    console.log("🔍 Incoming Rating Request:", {
+      requestId,
+      receiverId,
+      ratingValue,
+      comment,
+      senderId,
+    });
+
+    if (!requestId || !senderId || !receiverId || !ratingValue) {
+      console.error("❌ Missing required fields:", {
+        requestId,
+        senderId,
+        receiverId,
+        ratingValue,
       });
+      return res.status(400).json({ message: "❌ Missing required fields" });
     }
 
-    if (rating < 1 || rating > 10) {
+    if (ratingValue < 1 || ratingValue > 10) {
+      console.error("⚠️ Invalid rating value:", ratingValue);
       return res
         .status(400)
-        .json({ message: "Rating must be between 1 and 10." });
+        .json({ message: "⚠️ Rating must be between 1 and 10" });
     }
 
-    // Find the service provider
-    const serviceProvider = await UserModel.findById(serviceProviderId).select(
-      "ratings averageRating"
-    );
+    const sender = await UserModel.findById(senderId);
+    const receiver = await UserModel.findById(receiverId);
 
-    if (!serviceProvider) {
-      return res.status(404).json({ message: "Service provider not found." });
-    }
-
-    // Check if the user has already rated
-    const existingRatingIndex = serviceProvider.ratings.findIndex(
-      (r) => r.user.toString() === userId.toString()
-    );
-
-    if (existingRatingIndex !== -1) {
-      // Update the existing rating
-      serviceProvider.ratings[existingRatingIndex].rating = rating;
-      serviceProvider.ratings[existingRatingIndex].comment = comment || "";
-      serviceProvider.ratings[existingRatingIndex].date = new Date();
-    } else {
-      // Add a new rating
-      serviceProvider.ratings.push({
-        user: userId,
-        rating,
-        comment: comment || "",
-        date: new Date(),
+    if (!sender || !receiver) {
+      console.error("❌ User not found:", {
+        senderFound: !!sender,
+        receiverFound: !!receiver,
       });
+      return res.status(404).json({ message: "❌ User not found" });
     }
 
-    // Recalculate the average rating
-    const totalRatings = serviceProvider.ratings.reduce(
-      (sum, r) => sum + r.rating,
-      0
+    const objectIdRequestId = new mongoose.Types.ObjectId(requestId);
+
+    console.log("✅ Users found:", { senderId, receiverId });
+
+    const sentRequest = sender.sended_requests?.find(
+      (req) =>
+        req.requestId?.toString() === objectIdRequestId.toString() &&
+        req.status === "completed"
     );
-    serviceProvider.averageRating =
-      totalRatings / serviceProvider.ratings.length;
+    const receivedRequest = sender.received_requests?.find(
+      (req) =>
+        req.requestId?.toString() === objectIdRequestId.toString() &&
+        req.status === "completed"
+    );
 
-    // Save the updated service provider
-    await serviceProvider.save();
+    console.log("📌 Request check:", {
+      sentRequest: !!sentRequest,
+      receivedRequest: !!receivedRequest,
+    });
 
-    res.status(200).json({
-      message: "Rating submitted successfully.",
-      ratings: serviceProvider.ratings,
-      averageRating: serviceProvider.averageRating,
+    if (!sentRequest && !receivedRequest) {
+      console.error("⚠️ No completed request found for rating");
+      return res
+        .status(400)
+        .json({ message: "⚠️ No completed request found for rating" });
+    }
+
+    // ✅ Sender is rating the receiver (provider rating)
+    if (sentRequest) {
+      console.log("📝 Sender is rating the receiver");
+
+      const updateProviderRating = await UserModel.updateOne(
+        { _id: receiverId },
+        {
+          $push: {
+            providerRatings: {
+              rater: senderId,
+              rating: ratingValue,
+              comment,
+              date: new Date(),
+            },
+          },
+        }
+      );
+
+      console.log("✅ Provider rating updated:", updateProviderRating);
+
+      const updatedReceiver = await UserModel.findById(receiverId);
+      const providerAverageRating = updateAverage(
+        updatedReceiver.providerRatings ?? []
+      );
+
+      const updateReceiver = await UserModel.updateOne(
+        { _id: receiverId },
+        { $set: { providerAverageRating } }
+      );
+
+      console.log("✅ Provider average rating updated:", updateReceiver);
+
+      const updateSenderRequest = await UserModel.updateOne(
+        { _id: senderId, "sended_requests.requestId": requestId },
+        {
+          $set: {
+            "sended_requests.$.providerrating": {
+              value: ratingValue,
+              comment,
+              date: new Date(),
+            },
+            "sended_requests.$.status": "rated",
+          },
+        }
+      );
+
+      console.log("✅ Sender's request updated:", updateSenderRequest);
+    }
+
+    // ✅ Receiver is rating the sender (user rating)
+    if (receivedRequest) {
+      console.log("📝 Receiver is rating the sender");
+
+      const updateUserRating = await UserModel.updateOne(
+        { _id: receiverId },
+        {
+          $push: {
+            userRatings: {
+              rater: senderId,
+              rating: ratingValue,
+              comment,
+              date: new Date(),
+            },
+          },
+        }
+      );
+
+      console.log("✅ User rating updated:", updateUserRating);
+
+      const updatedSender = await UserModel.findById(senderId);
+      const userAverageRating = updateAverage(updatedSender.userRatings ?? []);
+
+      const updateSender = await UserModel.updateOne(
+        { _id: receiverId },
+        { $set: { userAverageRating } }
+      );
+
+      console.log("✅ User average rating updated:", updateSender);
+
+      const updateReceiverRequest = await UserModel.updateOne(
+        { _id: senderId, "received_requests.requestId": requestId },
+        {
+          $set: {
+            "received_requests.$.userrating": {
+              value: ratingValue,
+              comment,
+              date: new Date(),
+            },
+            "received_requests.$.status": "rated",
+          },
+        }
+      );
+
+      console.log("✅ Receiver's request updated:", updateReceiverRequest);
+    }
+
+    return res.json({
+      success: true,
+      message: "⭐ Rating submitted successfully!",
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error." });
+    console.error("❌ Error adding rating:", error);
+    return res.status(500).json({ message: "🚨 Server error" });
   }
 };
-
-// const getUserRating = async (req, res) => {
-//   try {
-//     const userId = req.user.id; // Assume authentication middleware sets `req.user`
-
-//     // Validate input
-//     if (!userId) {
-//       return res.status(400).json({ message: "User ID is required." });
-//     }
-
-//     // Find the user
-//     const user = await UserModel.findById(userId).select(
-//       "name email ratings averageRating providerAverageRating providerRatings userRatings userAverageRating" );
-
-//     if (!user) {
-//       return res.status(404).json({ message: "User not found." });
-//     }
-
-//     // Retrieve the user's rating (if it exists)
-//     const userRating = user.ratings.find(
-//       (rating) => rating.user.toString() === userId.toString()
-//     );
-
-//     // Calculate the average rating or set it to 0 if there are no ratings
-//     const userAvgRating = user.averageRating || 0;
-
-//     res.status(200).json({
-//       message: "User rating retrieved successfully.",
-//       rating: userRating || null, // Return `null` if no specific rating is found
-//       average: userAvgRating,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: "Internal server error." });
-//   }
-// };
 
 const getUserRating = async (req, res) => {
   try {

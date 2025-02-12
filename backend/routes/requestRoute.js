@@ -8,7 +8,6 @@ const {
   workDone,
   deleteRequest,
   sentRequestMobile,
-  getUserRequestsMobile,
   receivedRequestMobile,
   cancelRequestMobile,
   workDoneMobile,
@@ -33,7 +32,6 @@ router.post("/sentRequest", verifyToken, sentRequest);
 router.post("/sentRequestMobile", sentRequestMobile);
 
 router.get("/getUserRequests", verifyToken, getUserRequests);
-router.post("/getUserRequestsMobile", getUserRequestsMobile);
 
 router.get("/getAllRequests", getAllRequests);
 

@@ -459,6 +459,7 @@ const ReceivedRequest = ({ receivedRequest, setReceivedRequest }) => {
 
     console.log(receivedRequest, "receivedRequest");
     const [selectedRequest, setSelectedRequest] = useState(null);
+    const [status, setStatus] = useState(null);
     const [rating, setRating] = useState(0);
 
     const token = JSON.parse(localStorage.getItem('token'));
@@ -474,9 +475,11 @@ const ReceivedRequest = ({ receivedRequest, setReceivedRequest }) => {
             console.log(response, "response");
             if (response.status === 200) {
                 toast.success(`Request ${status}`);
+                setStatus(status);
                 setReceivedRequest((prev) =>
-                    prev?.map((req) => (req._id === id ? { ...req, status } : req))
+                    prev.map((req) => req.requestId === requestId ? { ...req, status } : req)
                 );
+
             } else {
                 toast.error("Failed to update request");
             }
@@ -546,7 +549,7 @@ const ReceivedRequest = ({ receivedRequest, setReceivedRequest }) => {
     };
 
     return (
-        <div className='mt-4'>
+        <div className='mt-28'>
             <section className="bg-gray-50 p-4 rounded-lg">
                 <div className="container">
                     <h2 className="text-2xl font-bold text-gray-800 border-b-2 border-orange-500 pb-2">
@@ -574,9 +577,15 @@ const ReceivedRequest = ({ receivedRequest, setReceivedRequest }) => {
                                             src={request.profilePic || ProfileIcon}
                                             alt="Profile"
                                         />
-                                        <span className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-semibold ${request.status === 'accepted' ? 'bg-blue-500' : request.status === 'completed' ? 'bg-green-600' : 'bg-yellow-500'} text-white`}>
+                                        <span className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-semibold 
+                                                     ${request.status === 'accepted' ? 'bg-blue-500'
+                                                : request.status === 'completed' ? 'bg-green-600'
+                                                    : 'bg-yellow-500'} text-white`}>
                                             {request.status || "Pending"}
                                         </span>
+
+
+
                                     </div>
                                     <div className="p-4">
                                         <div className="flex justify-between items-center">

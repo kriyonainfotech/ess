@@ -6,6 +6,7 @@ import { Modal } from 'bootstrap';
 const backend_API = import.meta.env.VITE_API_URL;
 
 const EditCategory = ({ editcategory, fetchCategory, currentPage }) => {
+    console.log(editcategory, fetchCategory, "editcategory");
     const [categoryName, setCategoryName] = useState("");
     const [categoryImg, setCategoryImg] = useState("");
     const [preview, setPreview] = useState("");
@@ -33,6 +34,8 @@ const EditCategory = ({ editcategory, fetchCategory, currentPage }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        console.log(categoryImg, "categoryImg");
+        console.log(categoryName, "categoryName");
         if (!categoryName) {
             alert("Please fill all fields");
             return;
@@ -41,7 +44,7 @@ const EditCategory = ({ editcategory, fetchCategory, currentPage }) => {
         const formData = new FormData();
         formData.append("categoryName", categoryName);
         if (categoryImg) {
-            formData.append("category", categoryImg);
+            formData.append("categoryImg", categoryImg);
         }
         formData.append("categorId", editcategory._id);
 
@@ -54,33 +57,48 @@ const EditCategory = ({ editcategory, fetchCategory, currentPage }) => {
                 },
             });
 
+            // if (response.status === 200) {
+            //     // Close modal using pure JavaScript
+            //     const modalElement = document.getElementById('exampleModal');
+            //     modalElement.classList.remove('show');
+            //     modalElement.setAttribute('aria-hidden', 'true');
+            //     modalElement.style.display = 'none';
+
+            //     // Remove modal backdrop
+            //     const modalBackdrops = document.getElementsByClassName('modal-backdrop');
+            //     while (modalBackdrops.length > 0) {
+            //         modalBackdrops[0].parentNode.removeChild(modalBackdrops[0]);
+            //     }
+
+            //     // Remove modal open class from body
+            //     document.body.classList.remove('modal-open');
+            //     document.body.style.overflow = '';
+            //     document.body.style.paddingRight = '';
+
+            //     toast.success("Category updated successfully");
+            //     fetchCategory(currentPage);
+
+            //     // Reset form
+            //     setCategoryName("");
+            //     setCategoryImg("");
+            //     setPreview("");
+            //     setError("");
+            // } 
+
             if (response.status === 200) {
-                // Close modal using pure JavaScript
-                const modalElement = document.getElementById('exampleModal');
-                modalElement.classList.remove('show');
-                modalElement.setAttribute('aria-hidden', 'true');
-                modalElement.style.display = 'none';
-
-                // Remove modal backdrop
-                const modalBackdrops = document.getElementsByClassName('modal-backdrop');
-                while (modalBackdrops.length > 0) {
-                    modalBackdrops[0].parentNode.removeChild(modalBackdrops[0]);
-                }
-
-                // Remove modal open class from body
-                document.body.classList.remove('modal-open');
-                document.body.style.overflow = '';
-                document.body.style.paddingRight = '';
-
                 toast.success("Category updated successfully");
                 fetchCategory(currentPage);
+
+                // Update preview to new image URL
+                if (categoryImg) {
+                    setPreview(URL.createObjectURL(categoryImg));
+                }
 
                 // Reset form
                 setCategoryName("");
                 setCategoryImg("");
-                setPreview("");
-                setError("");
-            } else {
+            }
+            else {
                 setError(response.data.message || "Failed to update category. Please try again.");
             }
 

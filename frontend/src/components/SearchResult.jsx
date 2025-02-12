@@ -11,6 +11,9 @@ import ProfileIcon from "../../public/User_icon.webp"
 const backend_API = import.meta.env.VITE_API_URL;
 
 const SearchResult = ({ Usersdata, token }) => {
+
+    console.log(Usersdata, "Usersdata");
+
     const { fcmToken } = useContext(FCMContext);
     const { user } = useContext(UserContext);
     const [requestStatus, setRequestStatus] = useState(null);
@@ -19,21 +22,18 @@ const SearchResult = ({ Usersdata, token }) => {
     const [message, setMessage] = useState("I NEED YOUR SERVICE");
     const navigate = useNavigate();
 
-    const renderStars = (ratings = [], maxRating = 5) => {
+    const renderStars = (ratings = [], maxRating = 10) => {
         const ratingValue = ratings.length > 0 ? ratings.reduce((acc, cur) => acc + cur, 0) / ratings.length : 0;
-        const stars = [];
-        for (let i = 1; i <= maxRating; i++) {
-            stars.push(
-                <img
-                    key={i}
-                    src={i <= ratingValue ? starGold : starSilver}
-                    alt={i <= ratingValue ? 'Filled Star' : 'Empty Star'}
-                    width={15}
-                />
-            );
-        }
-        return stars;
+        return Array.from({ length: maxRating }, (_, i) => (
+            <img
+                key={i}
+                src={i < ratingValue ? starGold : starSilver}
+                alt={i < ratingValue ? "Filled Star" : "Empty Star"}
+                width={15}
+            />
+        ));
     };
+
 
     useEffect(() => {
         const fetchRequests = async () => {
@@ -95,164 +95,101 @@ const SearchResult = ({ Usersdata, token }) => {
 
     return (
         <>
-            <div className="col-12 col-md-6 col-xl-3 p-2" style={{ cursor: "pointer" }}>
-                <div className="d-flex flex-md-column border-0 overflow-hidden rounded-3 shadow-xl" style={{ position: "relative" }}>
-                    <div className="col-5 col-md-7 p-2">
-                        <div className="d-flex w-100 h-[150px] justify-content-center border rounded-2 align-items-center">
+            <div className="col-12 col-md-6 col-xl-3 p-2 cursor-pointer">
+                <div className="flex flex-col border overflow-hidden rounded-lg shadow-lg relative bg-white w-full h-full">
+
+                    {/* Profile Image & Status Badge */}
+                    <div className="relative p-2">
+                        <div className="flex justify-center items-center w-full h-[300px] border rounded-md overflow-hidden bg-gray-100">
                             <img
                                 src={Usersdata?.profilePic || ProfileIcon}
                                 alt="User Profile"
-                                className='img-fluid overflow-hidden w-100 h-100'
-                                style={{ objectFit: "cover", objectPosition: "center" }}
+                                className="w-full h-full object-cover object-center"
                             />
                         </div>
-                        <div style={{ position: "absolute", top: "2%", right: "3%" }}>
-                            <span className={`px-2 py-1 shadow-xl bg-white d-flex align-items-center rounded-5 text-capitalize text-sm ${Usersdata?.userstatus === 'available' ? 'text-green' : 'text-orange'}`}>
+                        <div className="absolute top-3 right-3">
+                            <span className={`px-3 py-1 shadow-md rounded-full text-xs font-medium 
+          ${Usersdata?.userstatus === 'available' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
                                 {Usersdata?.userstatus}
                             </span>
                         </div>
                     </div>
-                    <div className="col-8 col-md-12">
-                        <div className="p-3 w-100 text-capitalize">
-                            <h4 className="font-bold">{Usersdata?.name}</h4>
-                            <h6 className="font-semibold py-1">{Usersdata?.businessCategory}</h6>
-                            <p className="text-muted text">{Usersdata?.address?.area} {Usersdata?.address?.city} {Usersdata?.address?.state} {Usersdata?.address?.country} {Usersdata?.address?.pincode}</p>
-                            <div className='py-2'>
-                                {Usersdata.ratings ? (
-                                    <div className='d-flex align-items-center'>
-                                        {renderStars(Usersdata.ratings.map((r) => r.rating), 10)}
-                                        <span className="ps-2">{Usersdata.ratings.length > 0 && Usersdata.ratings.reduce((acc, r) => acc + r.rating, 0) / Usersdata.ratings.length}</span>
-                                    </div>
-                                ) : (<></>)}
+
+                    {/* User Info */}
+                    <div className="p-4 text-start">
+                        <div className='flex justify-between items-center pb-3'>
+                            <h4 className="font-bold text-lg capitalize">{Usersdata?.name}</h4>
+                            <h6 className="font-medium text-gray-700 py-1 capitalize">{Usersdata?.businessCategory.join(', ')}</h6>
+                        </div>
+                        <p className="text-gray-500 text-sm">{`${Usersdata?.address?.area}, ${Usersdata?.address?.city}, ${Usersdata?.address?.state}, ${Usersdata?.address?.country}`} <br />{`${Usersdata?.address?.pincode}`}</p>
+
+                        {/* Ratings */}
+                        <div className="py-2 flex justify-start items-center">
+                            <p className='text-xs font-medium flex justify-center items-center'>User : <span className='flex '>{renderStars(Usersdata.userRatings.map((r) => r.rating), 10)}</span></p>
+                            <span className="ml-2 text-sm font-medium"> {Usersdata.userAverageRating > 0 ? Usersdata.userAverageRating.toFixed(1) : "0.0"}</span>
+                        </div>
+                        <div className="py-2 flex justify-start items-center">
+                            <p className='text-xs font-medium flex justify-center items-center'>Provider :<span className='flex '>{renderStars(Usersdata.providerRatings.map((r) => r.rating), 10)}</span></p>
+                            <span className="ml-2 text-sm font-medium"> {Usersdata.providerAverageRating > 0 ? Usersdata.providerAverageRating.toFixed(1) : "0.0"}</span>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="mt-3">
+                            {requestStatus === 'pending' ? (
+                                <Link to={`tel:${Usersdata.phone}`} className="bg-green-600 text-white font-semibold px-4 py-2 rounded-md shadow-md hover:bg-green-700">
+                                    Contact Now
+                                </Link>
+                            ) : (
+                                <button
+                                    className="bg-blue-600 text-white font-semibold px-4 py-2 w-100 rounded-md shadow-md hover:bg-blue-700 transition duration-200"
+                                    data-bs-toggle="modal"
+                                    data-bs-target={`#modal-${Usersdata._id}`}
+                                // disabled={loading}
+                                >
+                                    {/* <span className="spinner-border spinner-border-sm text-white"></span>  */}
+                                    Send Request
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Modal */}
+                <div className="modal fade" id={`modal-${Usersdata._id}`} tabIndex={-1} aria-hidden="true">
+                    <div className="modal-dialog modal-dialog-centered">
+                        <div className="modal-content rounded-lg shadow-lg">
+                            <div className="modal-header border-b">
+                                <h5 className="text-xl font-semibold">Send Request to {Usersdata.name}</h5>
+                                <button type="button" className="btn-close" data-bs-dismiss="modal"></button>
                             </div>
-                            <div>
-                                {requestStatus === 'pending' ? (
-                                    <Link to={`tel:${Usersdata.phone}`} className='btn bg-green rounded-1 text-semibold text-white'>
-                                        Contact Now
-                                    </Link>
-                                ) : (
-                                    <button
-                                        className='p-2 rounded-2 text-sm bg-green text-white'
-                                        data-bs-toggle="modal"
-                                        data-bs-target={`#modal-${Usersdata._id}`}
-                                        disabled={loading}
-                                    >
-                                        {loading ?
-                                            <div className="spinner-border text-white" role="status">
-                                                <span className="sr-only">Loading...</span>
-                                            </div> : 'Send now'}
-
-
-                                    </button>
-                                )}
+                            <div className="modal-body py-4">
+                                <h4 className="text-lg capitalize font-medium mb-2">{Usersdata.businessCategory.join(', ')}</h4>
+                                <textarea
+                                    className="w-full p-3 border rounded-md focus:outline-none focus:ring focus:ring-blue-300 resize-none"
+                                    rows="4"
+                                    value={message}
+                                    onChange={(e) => setMessage(e.target.value)}
+                                    placeholder="Write your message..."
+                                />
+                            </div>
+                            <div className="modal-footer border-t pt-3 flex justify-end">
+                                <button type="button" className="bg-gray-500 text-white px-4 py-2 rounded-md" data-bs-dismiss="modal">
+                                    Close
+                                </button>
+                                <button
+                                    type="button"
+                                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-200 ml-2"
+                                    onClick={() => sendRequest(Usersdata._id)}
+                                    disabled={loading}
+                                >
+                                    {loading ? <span className="spinner-border spinner-border-sm text-white"></span> : "Send Request"}
+                                </button>
                             </div>
                         </div>
                     </div>
-
-                    {/* <div>
-                        <div className="modal fade" id={`modal-${Usersdata._id}`} tabIndex={-1} aria-labelledby="exampleModalLabel" aria-hidden="true">
-                            <div className="modal-dialog">
-                                <div className="modal-content">
-                                    <div className="modal-header">
-                                        <h1 className="modal-title fs-5" id="exampleModalLabel">Send Request {Usersdata._id}</h1>
-                                        <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close" />
-                                    </div>
-                                    <div className="modal-body h-[200px]">
-                                        <h4>{Usersdata.name}</h4>
-                                        <div className="card message shadow-xl bg-white h-100 p-3">
-                                            <textarea
-                                                className="form-control"
-                                                value={message}
-                                                onChange={(e) => setMessage(e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="modal-footer">
-                                        <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                        <button
-                                            type="button"
-                                            className="btn btn-primary"
-                                            onClick={() => sendRequest(Usersdata._id)}
-                                            data-bs-dismiss="modal"
-                                            disabled={loading}
-
-                                        >
-                                            {loading ?
-                                                <div className="spinner-border text-white" role="status">
-                                                    <span className="sr-only">Loading...</span>
-                                                </div> : 'Send Request'}
-
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div> */}
-
-                    <div>
-                        <div
-                            className="modal fade"
-                            id={`modal-${Usersdata._id}`}
-                            tabIndex={-1}
-                            aria-labelledby="exampleModalLabel"
-                            aria-hidden="true"
-                        >
-                            <div className="modal-dialog modal-dialog-centered">
-                                <div className="modal-content shadow-lg rounded-lg">
-                                    <div className="modal-header border-bottom-0">
-                                        <h5 className="modal-title text-xl font-semibold" id="exampleModalLabel">
-                                            Send Request to {Usersdata.name}
-                                        </h5>
-                                        <button
-                                            type="button"
-                                            className="btn-close"
-                                            data-bs-dismiss="modal"
-                                            aria-label="Close"
-                                        />
-                                    </div>
-                                    <div className="modal-body pb-4 pt-0">
-                                        <h4 className="text-lg text-start capitalize font-medium mb-2">{Usersdata.businessCategory}</h4>
-                                        <div className="card bg-white shadow-md ">
-                                            <textarea
-                                                className="form-control resize-none"
-                                                value={message}
-                                                onChange={(e) => setMessage(e.target.value)}
-                                                rows="4"
-                                                placeholder="Write your message..."
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="modal-footer border-top-0 pt-3">
-                                        <button
-                                            type="button"
-                                            className="btn btn-secondary w-32"
-                                            data-bs-dismiss="modal"
-                                        >
-                                            Close
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="btn btn-primary"
-                                            onClick={() => sendRequest(Usersdata._id)}
-                                            data-bs-dismiss="modal"
-                                            disabled={loading}
-                                        >
-                                            {loading ? (
-                                                <div className="spinner-border spinner-border-sm text-white" role="status">
-                                                    <span className="visually-hidden">Loading...</span>
-                                                </div>
-                                            ) : (
-                                                'Send Request'
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
             </div>
+
         </>
     );
 };

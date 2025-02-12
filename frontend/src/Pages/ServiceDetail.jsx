@@ -7,7 +7,7 @@ import SearchResult from '../components/SearchResult';
 import { UserContext } from '../UserContext';
 import ProfileSidebar from '../components/ProfileSidebar';
 import Footer from '../components/Footer';
-import { TailSpin } from 'react-loader-spinner';
+import Loader from "../components/Loader";
 
 const backend_API = import.meta.env.VITE_API_URL;
 
@@ -33,7 +33,6 @@ const ServiceDetail = () => {
         {
           category: cat,
           city: loggedInUserCity,
-          status: 'available',
           isAdminApproved: true,
           sortByRating: 'desc',
         },
@@ -42,9 +41,8 @@ const ServiceDetail = () => {
           withCredentials: true,
         }
       );
-
+      console.log(response.data, "response");
       if (response.data.success) {
-        // Ensure unique services by ID
         const uniqueServices = Array.from(
           new Map(response.data.users.map(item => [item._id, item])).values()
         );
@@ -102,17 +100,17 @@ const ServiceDetail = () => {
       <AdminNavbar />
       <UserSideBar />
       <ProfileSidebar />
-      <section className="mt-40">
+      <section className=" mt-28">
         <div className="container">
           <div className="row">
             <div className="d-flex">
-              <h3 className="pt-4 px-3 text-capitalize">{category}</h3>
+              <h3 className="py-4 text-capitalize">{category}</h3>
             </div>
 
-            <div className="col-12 d-flex flex-wrap">
+            <div className="col-12 d-flex flex-wrap px-0">
               {isLoading ? (
                 <div className="d-flex justify-content-center align-items-center" style={{ height: "50vh", width: "100vw" }}>
-                  <TailSpin color="#00BFFF" height={50} width={50} />
+                  <Loader color="#00BFFF" height={50} width={50} />
                 </div>
               ) : service.length > 0 ? (
                 service.map((Usersdata, i) => (

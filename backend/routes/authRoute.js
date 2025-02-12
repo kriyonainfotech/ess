@@ -42,12 +42,6 @@ cloudinary.config({
   api_secret: "bhhXx57-OdaxvDdZOwaUKNvBXOA",
 });
 
-// cloudinary.config({
-//   cloud_name: "dcfm0aowt",
-//   api_key: "576798684156725",
-//   api_secret: "bhhXx57-OdaxvDdZOwaUKNvBXOA", // Click 'View API Keys' above to copy your API secret
-// });
-
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
@@ -85,7 +79,6 @@ router.post(
 
   registerUserweb
 );
-// router.post("/registerUserweb",upload.single("image"), registerUserweb);
 router.post("/loginUserweb", loginUserweb);
 router.put("/approveUser", approveUser);
 
