@@ -163,10 +163,6 @@ const ReferredBy = () => {
             <div >
               <h4 className="">Your Referrals</h4>
             </div>
-            <div>
-              <p><strong>Direct Referrals:</strong> {referralCounts.direct}</p>
-              <p><strong>Total Referrals (All Levels):</strong> {referralCounts.total}</p>
-            </div>
           </div>
 
           {loadingReferrals ? (

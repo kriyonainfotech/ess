@@ -69,7 +69,7 @@ const SearchResult = ({ Usersdata, token }) => {
 
         setLoading(true);
         try {
-            const response = await axios.post(`${backend_API}/request/sentRequest`, { receiverId: userId, message: requestMessage }, {
+            const response = await axios.post(`${backend_API}/request/sentRequest`, { receiverId: user._id, message: requestMessage }, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
@@ -95,12 +95,12 @@ const SearchResult = ({ Usersdata, token }) => {
 
     return (
         <>
-            <div className="col-12 col-md-6 col-xl-3 p-2 cursor-pointer">
+            <div className="col-12 col-md-6 col-xl-4 p-2 cursor-pointer">
                 <div className="flex flex-col border overflow-hidden rounded-lg shadow-lg relative bg-white w-full h-full">
 
                     {/* Profile Image & Status Badge */}
                     <div className="relative p-2">
-                        <div className="flex justify-center items-center w-full h-[300px] border rounded-md overflow-hidden bg-gray-100">
+                        <div className="flex justify-center items-center w-full h-70 border rounded-md overflow-hidden bg-gray-100">
                             <img
                                 src={Usersdata?.profilePic || ProfileIcon}
                                 alt="User Profile"
@@ -144,9 +144,7 @@ const SearchResult = ({ Usersdata, token }) => {
                                     className="bg-blue-600 text-white font-semibold px-4 py-2 w-100 rounded-md shadow-md hover:bg-blue-700 transition duration-200"
                                     data-bs-toggle="modal"
                                     data-bs-target={`#modal-${Usersdata._id}`}
-                                // disabled={loading}
                                 >
-                                    {/* <span className="spinner-border spinner-border-sm text-white"></span>  */}
                                     Send Request
                                 </button>
                             )}
@@ -160,13 +158,13 @@ const SearchResult = ({ Usersdata, token }) => {
                         <div className="modal-content rounded-lg shadow-lg">
                             <div className="modal-header border-b">
                                 <h5 className="text-xl font-semibold">Send Request to {Usersdata.name}</h5>
-                                <button type="button" className="btn-close" data-bs-dismiss="modal"></button>
+                                <button type="button" className="btn-close text-white p-3" data-bs-dismiss="modal"></button>
                             </div>
                             <div className="modal-body py-4">
                                 <h4 className="text-lg capitalize font-medium mb-2">{Usersdata.businessCategory.join(', ')}</h4>
                                 <textarea
                                     className="w-full p-3 border rounded-md focus:outline-none focus:ring focus:ring-blue-300 resize-none"
-                                    rows="4"
+                                    rows="1"
                                     value={message}
                                     onChange={(e) => setMessage(e.target.value)}
                                     placeholder="Write your message..."

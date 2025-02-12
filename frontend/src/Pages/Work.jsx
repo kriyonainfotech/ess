@@ -79,8 +79,8 @@ const Work = () => {
       <UserSideBar />
       <ProfileSidebar />
 
-      <div className="my-40">
-        <section>
+      <div className="mt-40 ">
+        <section className="bg-gray-50 py-5">
           <div className="container">
             <div className="row">
               <div className="col-12 d-flex gap-3">
@@ -95,22 +95,23 @@ const Work = () => {
                   </div>
                 ))}
               </div>
+
+              <div className="mt-0">
+                {loading ? (
+                  <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "300px" }}>
+                    <TailSpin color="#00BFFF" height={50} width={50} />
+                  </div>
+                ) : currentRequest === "Received Request" ? (
+                  <Recievedrequest receivedRequest={receivedRequest} setReceivedRequest={setReceivedRequest} />
+                ) : (
+                  <Senedrequest sendedRequest={sendedRequest} setSendedRequest={setSendedRequest} />
+                )}
+
+              </div>
             </div>
           </div>
         </section>
 
-        <div className="mt-4">
-          {loading ? (
-            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "300px" }}>
-              <TailSpin color="#00BFFF" height={50} width={50} />
-            </div>
-          ) : currentRequest === "Received Request" ? (
-            <Recievedrequest receivedRequest={receivedRequest} setReceivedRequest={setReceivedRequest} />
-          ) : (
-            <Senedrequest sendedRequest={sendedRequest} setSendedRequest={setSendedRequest} />
-          )}
-
-        </div>
       </div>
 
       <Footer />

@@ -549,12 +549,9 @@ const ReceivedRequest = ({ receivedRequest, setReceivedRequest }) => {
     };
 
     return (
-        <div className='mt-28'>
-            <section className="bg-gray-50 p-4 rounded-lg">
-                <div className="container">
-                    <h2 className="text-2xl font-bold text-gray-800 border-b-2 border-orange-500 pb-2">
-                        Received Requests
-                    </h2>
+        <div className='mt-0'>
+            <section className="">
+                <div className="">
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
                         {receivedRequest?.length ? (
                             receivedRequest.map((request, i) => (
@@ -569,10 +566,10 @@ const ReceivedRequest = ({ receivedRequest, setReceivedRequest }) => {
                                                     ? "Request accepted contact the user"
                                                     : ""
 
-                                } className={`bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden ${["rejected", "cancelled"].includes(request.status) ? "opacity-50 grayscale" : ""}`}>
+                                } className={`bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden }`}>
                                     <div className="relative">
                                         <img
-                                            className="w-full h-64 object-cover object-top"
+                                            className="w-full h-70 object-cover object-top"
 
                                             src={request.profilePic || ProfileIcon}
                                             alt="Profile"
@@ -659,6 +656,7 @@ const ReceivedRequest = ({ receivedRequest, setReceivedRequest }) => {
                                 <p className="text-gray-500">Your received requests will appear here.</p>
                             </div>
                         )}
+
                     </div>
                 </div>
             </section>

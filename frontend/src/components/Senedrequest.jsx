@@ -589,12 +589,9 @@ const Senedrequest = ({ sendedRequest, setSendedRequest }) => {
 
 
     return (
-        <div className="mt-4">
-            <section className="bg-gray-50 p-4 rounded-lg">
-                <div className="container">
-                    <h2 className="text-2xl font-bold text-gray-800 border-b-2 border-orange-500 pb-2">
-                        Sent Requests
-                    </h2>
+        <div className="mt-0">
+            <section className="">
+                <div className="">
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
                         {sendedRequest?.length ? (
                             sendedRequest.map((send, i) => (
@@ -611,7 +608,7 @@ const Senedrequest = ({ sendedRequest, setSendedRequest }) => {
 
                                 } className={`bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden ${["rejected", "cancelled"].includes(send.status) ? "opacity-50 grayscale" : ""}`}>
                                     <div className="relative">
-                                        <img className="w-full h-64 object-cover object-top"
+                                        <img className="w-full h-70 object-cover object-top"
                                             src={send.profilePic || ProfileIcon}
                                             alt="Profile"
                                         />

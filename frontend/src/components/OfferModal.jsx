@@ -111,7 +111,7 @@ const OfferModal = ({ BannerUser, offerImage, closeModal, allBanners, initialBan
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">View Offer</h5>
-                <button type="button" className="btn-close" onClick={closeModal}></button>
+                <button type="button" className="btn-close p-3" onClick={closeModal}></button>
               </div>
               <div className="modal-body">
                 {currentOffer ? (
@@ -170,11 +170,11 @@ const OfferModal = ({ BannerUser, offerImage, closeModal, allBanners, initialBan
                 )}
               </div>
               <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => navigateOffer(-1)}>
+                <button className="btn btn-primary" onClick={() => navigateOffer(-1)}>
                   <FaArrowLeft />
                 </button>
                 <button className="btn btn-primary" onClick={() => navigateOffer(1)}><FaArrowRight /></button>
-                <button className="btn btn-success" onClick={handleContactNowClick}>Contact Now</button>
+                <button className="btn btn-primary" onClick={handleContactNowClick}>Contact Now</button>
               </div>
             </div>
 
