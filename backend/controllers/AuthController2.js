@@ -1,4 +1,7 @@
 const UserModel = require("../model/user");
+const {
+  distributeReferralRewards,
+} = require("../controllers/paymentController");
 
 const getUsersByBCategory = async (req, res) => {
   try {
@@ -20,6 +23,8 @@ const getUsersByBCategory = async (req, res) => {
     const users = await UserModel.find({
       businessCategory: category,
       "address.city": city,
+      userstatus: "available",
+      paymentVerified: true,
       isAdminApproved: true,
     }).select(
       "_id name email phone businessCategory profilePic address businessName userstatus userAverageRating userRatings providerRatings providerAverageRating"
@@ -137,52 +142,82 @@ const updateUserAddressAndAadhar = async (req, res) => {
   }
 };
 
-// Add migration function to ensure fields exist for all users
-const migrateUserFields = async (req, res) => {
+const setReferral = async (req, res) => {
   try {
-    console.log("Migrating user fields");
-    // Only allow admin to run migration
-    // if (req.user.role !== "Admin") {
-    //   return res.status(403).json({
-    //     success: false,
-    //     message: "Only admin can perform this action",
-    //   });
-    // }
+    const { referrerPhone, referredPhone } = req.body;
 
-    // Update all documents that don't have these fields
-    const result = await UserModel.updateMany(
-      {
-        $or: [
-          { permanentAddress: { $exists: false } },
-          { aadharNumber: { $exists: false } },
-        ],
-      },
-      {
-        $set: {
-          permanentAddress: "",
-          aadharNumber: "",
-        },
-      }
+    // Validate input
+    if (!referrerPhone || !referredPhone) {
+      return res.status(400).json({
+        message: "Both referrer and referred phone numbers are required.",
+      });
+    }
+
+    // Find both users in parallel using indexed phone numbers
+    const [referrer, referred] = await Promise.all([
+      UserModel.findOne({ phone: referrerPhone })
+        .select("_id name paymentVerified")
+        .lean(),
+      UserModel.findOne({ phone: referredPhone })
+        .select("_id name referredBy paymentVerified")
+        .lean(),
+    ]);
+    console.log(referred, "qwertyuio");
+    // Check user existence
+    if (!referrer || !referred) {
+      return res.status(404).json({ message: "One or both users not found." });
+    }
+
+    // Check if referred already has a referrer
+    if (referred.referredBy?.length > 0) {
+      return res
+        .status(400)
+        .json({ message: "Referred user already has a referrer." });
+    }
+
+    // Atomic update to set referrer only if not already set
+    const referredUpdate = await UserModel.updateOne(
+      { _id: referred._id, referredBy: { $size: 0 } },
+      { $set: { referredBy: [referrer._id] } }
     );
 
-    res.status(200).json({
-      success: true,
-      message: "Migration completed successfully",
-      modifiedCount: result.modifiedCount,
+    if (referredUpdate.modifiedCount === 0) {
+      return res
+        .status(400)
+        .json({ message: "Referred user already has a referrer." });
+    }
+
+    // Update referrer's referrals atomically
+    await UserModel.updateOne(
+      { _id: referrer._id },
+      { $push: { referrals: referred._id } }
+    );
+
+    if (referred.paymentVerified == true) {
+      await distributeReferralRewards(referred._id, referrer._id);
+    }
+    console.log(referred.paymentVerified, "klklklklklkl");
+    return res.status(200).json({
+      message: "Referral relationship established successfully.",
+      referrer: referrer.name,
+      referred: referred.name,
+    });
+
+    return res.status(200).json({
+      message: "Referral relationship established successfully.",
+      referrer: referrer.name,
+      referred: referred.name,
     });
   } catch (error) {
-    console.error("Error in migrateUserFields:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error during migration",
-      error: error.message,
-    });
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: "An error occurred.", error: error.message });
   }
 };
 
 module.exports = {
   getUsersByBCategory,
-  // fixUserData,
+  setReferral,
   updateUserAddressAndAadhar,
-  migrateUserFields,
 };

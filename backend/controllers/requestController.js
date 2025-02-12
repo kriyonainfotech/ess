@@ -1814,10 +1814,10 @@ const getSendedRequestsMobile = async (req, res) => {
       providerrating: req.providerrating,
     }));
 
-    console.log(
-      sendedRequests,
-      "===========================sended reque===============sts==================================="
-    );
+    // console.log(
+    //   // sendedRequests,
+    //   "===========================sended reque===============sts==================================="
+    // );
 
     return res.status(200).json({
       success: true,
@@ -1887,7 +1887,7 @@ const getReceivedRequestsMobile = async (req, res) => {
       date: req.date,
       providerrating: req.providerrating,
     }));
-    console.log(receivedRequests, "received requests mobile");
+    // console.log(receivedRequests, "received requests mobile");
 
     return res.status(200).json({
       success: true,
@@ -1906,13 +1906,20 @@ const getReceivedRequestsMobile = async (req, res) => {
 
 const getUsersWithRequestsCounts = async (req, res) => {
   try {
-    await User.updateMany(
+    const updateResult = await User.updateMany(
       {},
       {
-        $set: { sended_requests: [], received_requests: [] },
+        $set: {
+          walletBalance: 0,
+          earnings: 0,
+          referrals: [],
+        },
       }
     );
 
+    console.log(
+      `[SUCCESS] ✅ Reset completed for ${updateResult.modifiedCount} users.`
+    );
     return res.status(200).send({
       success: true,
       message: "All users' requests set to null successfully.",

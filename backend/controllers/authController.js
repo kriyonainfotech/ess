@@ -5,7 +5,9 @@ const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const { v4: uuidv4 } = require("uuid");
-// const { distributeReferralRewards } = require("../services/referralService");
+const {
+  distributeReferralRewards,
+} = require("../controllers/paymentController");
 const { sendNotification } = require("./sendController");
 
 const getPublicIdFromUrl = (url) => {
@@ -371,7 +373,16 @@ const registerUserweb = async (req, res) => {
     // Find referrer based on referralCode (which is a user ID)
     let referrer = null;
     if (referralCode) {
-      referrer = await UserModel.findById(referralCode);
+      if (/^\d{10}$/.test(referralCode)) {
+        // If referralCode is a 10-digit phone number
+        referrer = await UserModel.findOne({ phone: referralCode }).select(
+          "_id"
+        );
+      } else if (/^[a-fA-F0-9]{16}$/.test(referralCode)) {
+        // If referralCode is a 16-character user ID
+        referrer = await UserModel.findById(referralCode).select("_id");
+      }
+
       if (!referrer) {
         console.warn("[WARN] ⚠️ Invalid referral code provided.");
         return res.status(400).json({
@@ -505,68 +516,6 @@ const updateReferralChain = async (referrerId, newUserId) => {
         await updateReferralChain(parentReferrerId, newUserId); // Call recursively
       }
     }
-  }
-};
-
-const setReferral = async (req, res) => {
-  try {
-    const { referrerPhone, referredPhone } = req.body;
-
-    // Validate input
-    if (!referrerPhone || !referredPhone) {
-      return res.status(400).json({
-        message: "Both referrer and referred phone numbers are required.",
-      });
-    }
-
-    // Find both users in parallel using indexed phone numbers
-    const [referrer, referred] = await Promise.all([
-      UserModel.findOne({ phone: referrerPhone }).select("_id name").lean(),
-      UserModel.findOne({ phone: referredPhone })
-        .select("_id name referredBy")
-        .lean(),
-    ]);
-
-    // Check user existence
-    if (!referrer || !referred) {
-      return res.status(404).json({ message: "One or both users not found." });
-    }
-
-    // Check if referred already has a referrer
-    if (referred.referredBy?.length > 0) {
-      return res
-        .status(400)
-        .json({ message: "Referred user already has a referrer." });
-    }
-
-    // Atomic update to set referrer only if not already set
-    const referredUpdate = await UserModel.updateOne(
-      { _id: referred._id, referredBy: { $size: 0 } },
-      { $set: { referredBy: [referrer._id] } }
-    );
-
-    if (referredUpdate.modifiedCount === 0) {
-      return res
-        .status(400)
-        .json({ message: "Referred user already has a referrer." });
-    }
-
-    // Update referrer's referrals atomically
-    await UserModel.updateOne(
-      { _id: referrer._id },
-      { $push: { referrals: referred._id } }
-    );
-
-    return res.status(200).json({
-      message: "Referral relationship established successfully.",
-      referrer: referrer.name,
-      referred: referred.name,
-    });
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ message: "An error occurred.", error: error.message });
   }
 };
 
@@ -1495,7 +1444,6 @@ module.exports = {
   resetPassword,
   verifyCode,
   forgotPassword,
-  setReferral,
   updateUsersPaymentVerified,
   getrequests,
   updateReferralChain,

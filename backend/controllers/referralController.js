@@ -2,64 +2,6 @@ const UserModel = require("../model/user"); // Adjust path based on your project
 const { distributeReferralRewards } = require("../services/referralService"); // If you create a referral service later
 const { sendNotification } = require("./sendController");
 
-// View a user's referrals (including multiple levels)
-// const getReferrals = async (req, res) => {
-//   try {
-//     const userId = req.params.id;
-
-//     // Find the user and populate their direct referrals
-//     const user = await UserModel.findById(userId)
-//       .select("name phone email referrals")
-//       .populate({
-//         path: "referrals",
-//         select: "name phone email",
-//         populate: {
-//           path: "referrals", // Populate referrals of the referrals (second level)
-//           select: "name phone email",
-//           populate: {
-//             path: "referrals", // Populate referrals of the second-level referrals (third level)
-//             select: "name phone email",
-//           },
-//         },
-//       });
-
-//     if (!user) {
-//       return res.status(404).send({
-//         success: false,
-//         message: "User not found",
-//       });
-//     }
-
-//     // Find users who registered with this user's referral code
-//     const referredUsers = await UserModel.find({ referredBy: userId })
-//       .select("name phone email referrals")
-//       .populate({
-//         path: "referrals",
-//         select: "name phone email",
-
-//       });
-// // console.log(referredUsers,"rusers");
-
-//     return res.status(200).send({
-//       success: true,
-//       user: {
-//         id: user._id,
-//         name: user.name,
-//         phone: user.phone,
-//         email: user.email,
-//         referrals: user.referrals, // Direct referrals of the user
-//       },
-//       referredUsers: referredUsers, // Users who registered using this user's referral and their referrals
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     return res.status(500).send({
-//       success: false,
-//       message: "Error fetching referrals",
-//       error: error.message,
-//     });
-//   }
-// };
 const getReferrals = async (req, res) => {
   try {
     const userId = req.params.id;

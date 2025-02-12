@@ -34,6 +34,8 @@ const ServiceDetail = () => {
           category: cat,
           city: loggedInUserCity,
           isAdminApproved: true,
+          paymentVerified: true,
+          userstatus: 'available',
           sortByRating: 'desc',
         },
         {
