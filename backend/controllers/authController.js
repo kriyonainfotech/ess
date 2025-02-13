@@ -373,12 +373,15 @@ const registerUserweb = async (req, res) => {
     // Find referrer based on referralCode (which is a user ID)
     let referrer = null;
     if (referralCode) {
+      console.log(referralCode, "rc0");
       if (/^\d{10}$/.test(referralCode)) {
+        console.log(referralCode, "rc");
         // If referralCode is a 10-digit phone number
         referrer = await UserModel.findOne({ phone: referralCode }).select(
           "_id"
         );
-      } else if (/^[a-fA-F0-9]{16}$/.test(referralCode)) {
+      } else if (/^[a-fA-F0-9]{24}$/.test(referralCode)) {
+        console.log(referralCode, "rc");
         // If referralCode is a 16-character user ID
         referrer = await UserModel.findById(referralCode).select("_id");
       }

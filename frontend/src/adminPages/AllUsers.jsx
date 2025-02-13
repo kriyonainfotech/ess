@@ -171,8 +171,8 @@ const UserDetailsModal = ({ user, onClose, onApprove }) => {
       <div className="modal-content bg-white p-2 rounded shadow-lg w-full sm:w-3/4 md:w-1/2 lg:w-1/3 max-w-4xl h-[80vh] overflow-hidden">
         <h2 className="text-xl font-bold py-3 text-center border">User Details</h2>
         <div className="modal-body overflow-y-auto">
-          <table className="table-auto w-full border-collapse border border-gray-300">
-            <tbody>
+          <table className="table-auto w-full border-collapse border border-gray-300 bg-light">
+            <tbody >
               <tr>
                 <td className="border border-gray-300 px-4 py-2 font-semibold">ProfilePic</td>
                 <td className="border border-gray-300 px-4 py-2">
@@ -235,8 +235,8 @@ const UserDetailsModal = ({ user, onClose, onApprove }) => {
             </tbody>
           </table>
         </div>
-        <div className="flex justify-between mt-4 gap-1">
-          <button onClick={handleApproveClick} className="btn btn-primary w-full sm:w-auto">Approve</button>
+        <div className="flex justify-end m-0 gap-1 ">
+
           <button onClick={onClose} className="btn btn-secondary w-full sm:w-auto">Close</button>
         </div>
       </div>

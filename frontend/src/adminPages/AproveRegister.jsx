@@ -14,187 +14,35 @@ import { RxCrossCircled } from "react-icons/rx";
 
 const backend_API = import.meta.env.VITE_API_URL;
 
-// User Details Modal Component
-// const UserDetailsModal = ({ user, onClose, onApprove }) => {
-//     const [zoomedImage, setZoomedImage] = useState(null);
-//     const [permanentAddress, setPermanentAddress] = useState(user.permanentAddress || "");
-//     const [aadharNumber, setAadharNumber] = useState(user.aadharNumber || "");
-//     const [loading, setLoading] = useState(false);
-
-//     if (!user) return null;
-
-//     const handleApproveClick = (e) => {
-//         e.stopPropagation();
-//         onApprove(user._id);
-//     };
-
-//     const handleSave = async () => {
-//         try {
-//             setLoading(true);
-//             const response = await axios.put(`${backend_API}/auth/updateUserAddressAndAadhar`, {
-//                 permanentAddress,
-//                 aadharNumber,
-//             });
-//             console.log(response.data);
-//             if (response.status === 200) {
-//                 toast.success(response?.data?.message)
-//             }
-//         } catch (error) {
-//             console.error("Error updating user details:", error);
-//             alert("Failed to update user details");
-
-//         } finally {
-//             setLoading(false);
-//         }
-//     };
-//     const toggleZoom = (image) => {
-//         setZoomedImage(zoomedImage === image ? null : image);
-//     };
-
-//     return (
-//         <div className="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-//             <div className="modal-content bg-white p-2 rounded shadow-lg w-full sm:w-3/4 md:w-1/2 lg:w-1/3 max-w-4xl h-[80vh] overflow-hidden">
-//                 <h2 className="text-xl font-bold py-3 text-center border">User Details</h2>
-//                 <div className="modal-body overflow-y-auto">
-//                     <table className="table-auto w-full border-collapse border border-gray-300">
-//                         <tbody>
-//                             <tr>
-//                                 <td className="border border-gray-300 px-4 py-2 font-semibold">ProfilePic</td>
-//                                 <td className="border border-gray-300 px-4 py-2">
-//                                     <img src={user.profilePic} width={50} alt="Profile" />
-//                                 </td>
-//                             </tr>
-//                             <tr>
-//                                 <td className="border border-gray-300 px-4 py-2 font-semibold">Name</td>
-//                                 <td className="border border-gray-300 px-4 py-2">{user.name}</td>
-//                             </tr>
-//                             <tr>
-//                                 <td className="border border-gray-300 px-4 py-2 font-semibold">Email</td>
-//                                 <td className="border border-gray-300 px-4 py-2">{user.email}</td>
-//                             </tr>
-//                             <tr>
-//                                 <td className="border border-gray-300 px-4 py-2 font-semibold">Contact</td>
-//                                 <td className="border border-gray-300 px-4 py-2">{user.phone}</td>
-//                             </tr>
-//                             <tr>
-//                                 <td className="border border-gray-300 px-4 py-2 font-semibold">Address</td>
-//                                 <td className="border border-gray-300 px-4 py-2">
-//                                     {`${user?.address?.area} ${user?.address?.city} ${user?.address?.state} ${user?.address?.country} ${user?.address?.pincode}`}
-//                                 </td>
-//                             </tr>
-//                             <tr>
-//                                 <td className="border border-gray-300 px-4 py-2 font-semibold">Business Name</td>
-//                                 <td className="border border-gray-300 px-4 py-2">{user.businessName}</td>
-//                             </tr>
-//                             <tr>
-//                                 <td className="border border-gray-300 px-4 py-2 font-semibold">Business Category</td>
-//                                 <td className="border border-gray-300 px-4 py-2">{user.businessCategory}</td>
-//                             </tr>
-//                             <tr>
-//                                 <td className="border border-gray-300 px-4 py-2 font-semibold">Business Address</td>
-//                                 <td className="border border-gray-300 px-4 py-2">{user.businessAddress}</td>
-//                             </tr>
-//                             <tr>
-//                                 <td className="border border-gray-300 px-4 py-2 font-semibold">Aadhar</td>
-//                                 <td className="border border-gray-300 px-4 py-2 flex gap-2">
-//                                     <img
-//                                         src={user.frontAadhar}
-//                                         width={50}
-//                                         alt="Front Aadhar"
-//                                         className="cursor-pointer"
-//                                         onClick={() => toggleZoom(user.frontAadhar)}
-//                                     />
-//                                     <img
-//                                         src={user.backAadhar}
-//                                         width={50}
-//                                         alt="Back Aadhar"
-//                                         className="cursor-pointer"
-//                                         onClick={() => toggleZoom(user.backAadhar)}
-//                                     />
-//                                 </td>
-//                             </tr>
-//                             <tr>
-//                                 <td className="border border-gray-300 px-4 py-2 font-semibold">Referred By</td>
-//                                 <td className="border border-gray-300 px-4 py-2">
-//                                     {user.referredBy && user.referredBy.length > 0
-//                                         ? user.referredBy.map(referrer => referrer.name || 'Unknown').join(', ')
-//                                         : 'None'
-//                                     }
-//                                 </td>
-//                             </tr>
-//                             <tr>
-//                                 <td className="border border-gray-300 px-4 py-2 font-semibold">Permanent Address</td>
-//                                 <td className="border border-gray-300 px-4 py-2">
-//                                     <input
-//                                         type="text"
-//                                         className="border p-2 w-full"
-//                                         value={permanentAddress}
-//                                         onChange={(e) => setPermanentAddress(e.target.value)}
-//                                     />
-//                                 </td>
-//                             </tr>
-//                             <tr>
-//                                 <td className="border border-gray-300 px-4 py-2 font-semibold">Aadhar Number</td>
-//                                 <td className="border border-gray-300 px-4 py-2 flex items-center gap-2">
-//                                     <input
-//                                         type="text"
-//                                         className="border p-2 w-full"
-//                                         value={aadharNumber}
-//                                         onChange={(e) => setAadharNumber(e.target.value)}
-//                                     />
-//                                     <button
-//                                         onClick={handleSave}
-//                                         className="bg-blue-500 text-white px-4 py-2 rounded"
-//                                         disabled={loading}
-//                                     >
-//                                         {loading ? "Saving..." : "Save"}
-//                                     </button>
-//                                 </td>
-//                             </tr>
-//                         </tbody>
-//                     </table>
-//                 </div>
-//                 <div className="flex justify-between mt-4 gap-1">
-//                     <button onClick={handleApproveClick} className="btn btn-primary w-full sm:w-auto">Approve</button>
-//                     <button onClick={onClose} className="btn btn-secondary w-full sm:w-auto">Close</button>
-//                 </div>
-//             </div>
-
-//             {/* Zoomed Image Modal */}
-//             {zoomedImage && (
-//                 <div
-//                     className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-[60]"
-//                     onClick={() => setZoomedImage(null)}
-//                 >
-//                     <img
-//                         src={zoomedImage}
-//                         alt="Zoomed Aadhar"
-//                         className="max-w-[90%] max-h-[90vh] object-contain"
-//                         onClick={(e) => e.stopPropagation()}
-//                     />
-//                 </div>
-//             )}
-//         </div>
-//     );
-// };
-
-// User Details Modal Component
-// User Details Modal Component
-// User Details Modal Component
-const UserDetailsModal = ({ user, onClose, onApprove }) => {
+const UserDetailsModal = ({ user, onClose }) => {
     const [zoomedIndex, setZoomedIndex] = useState(null);
+    const [zoomPic, setZoompic] = useState(null)
     const [permanentAddress, setPermanentAddress] = useState(user.permanentAddress || "");
     const [aadharNumber, setAadharNumber] = useState(user.aadharNumber || "");
     const [loading, setLoading] = useState(false);
     const [userId, setUserId] = useState(user._id);
+    const navigate = useNavigate()
 
     const aadharImages = [user.frontAadhar, user.backAadhar];
 
     if (!user) return null;
 
-    const handleApproveClick = (e) => {
-        e.stopPropagation();
-        onApprove(user._id);
+    const approveUser = async (userId) => {
+        try {
+            const response = await axios.put(`${backend_API}/auth/approveUser`, { userId }, {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            if (response.status === 200) {
+                toast(response?.data?.message)
+                // fetchData(); // Refresh the user list after approval
+                navigate("/admin/users")
+            }
+        } catch (error) {
+            console.log(error);
+            toast(error?.response?.data?.message)
+        }
     };
 
     const handleSave = async () => {
@@ -224,7 +72,11 @@ const UserDetailsModal = ({ user, onClose, onApprove }) => {
 
     const closeZoomModal = () => {
         setZoomedIndex(null);
+        setZoompic(null)
     };
+
+    const openZoomPicModal = (image) => setZoompic(image);
+    // const closeZoomModal = () => setZoomedImage(null);
 
     const handlePrevNext = (step) => {
         setZoomedIndex((prevIndex) => (prevIndex + step + aadharImages.length) % aadharImages.length);
@@ -241,7 +93,7 @@ const UserDetailsModal = ({ user, onClose, onApprove }) => {
                             <tr>
                                 <td className="border border-gray-300 px-4 py-2 font-semibold">ProfilePic</td>
                                 <td className="border border-gray-300 px-4 py-2">
-                                    <img src={user.profilePic} width={50} alt="Profile" />
+                                    <img src={user.profilePic} width={50} alt="Profile" onClick={() => openZoomPicModal(user.profilePic)} />
                                 </td>
                             </tr>
                             <tr>
@@ -300,8 +152,8 @@ const UserDetailsModal = ({ user, onClose, onApprove }) => {
                         </tbody>
                     </table>
                 </div>
-                <div className="flex justify-between mt-4 gap-1">
-                    <button onClick={handleApproveClick} className="btn btn-primary w-full sm:w-auto">Approve</button>
+                <div className="flex justify-end mt-4 gap-1">
+                    <button onClick={() => approveUser(user._id)} className="btn btn-primary w-full sm:w-auto">Approve</button>
                     <button onClick={onClose} className="btn btn-secondary w-full sm:w-auto">Close</button>
                 </div>
             </div>
@@ -322,12 +174,29 @@ const UserDetailsModal = ({ user, onClose, onApprove }) => {
                     </div>
                 </div>
             )}
-        </div>
+
+            {zoomPic && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-[60]">
+                    <div className="relative bg-white p-4 rounded-lg shadow-lg">
+                        <button
+                            onClick={closeZoomModal}
+                            className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full"
+                        >
+                            ✖
+                        </button>
+                        <img
+                            src={zoomPic}
+                            className="max-w-[90vw] max-h-[90vh] object-contain"
+                            alt="Zoomed"
+                        />
+                    </div>
+                </div>
+            )}
+
+        </div >
     );
 };
 
-
-// All Users Component
 const AllUsers = () => {
     const [userList, setUserList] = useState([]);
     const [selectedUser, setSelectedUser] = useState(null);
@@ -403,23 +272,6 @@ const AllUsers = () => {
             }
         } catch (error) {
             console.error('Error:', error.message);
-            toast(error?.response?.data?.message)
-        }
-    };
-
-    const approveUser = async (userId) => {
-        try {
-            const response = await axios.put(`${backend_API}/auth/approveUser`, { userId }, {
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-            if (response.status === 200) {
-                toast(response?.data?.message)
-                fetchData(); // Refresh the user list after approval
-            }
-        } catch (error) {
-            console.log(error.response.data);
             toast(error?.response?.data?.message)
         }
     };
@@ -619,21 +471,16 @@ const AllUsers = () => {
                                                 </td>
                                                 <td>
                                                     <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            approveUser(user._id);
-                                                        }}
+                                                        // onClick={(e) => {
+                                                        //     e.stopPropagation();
+                                                        //     approveUser(user._id);
+                                                        // }}
+                                                        onClick={() => setSelectedUser(user)}
                                                         className="btn fs-6 bg-blue text-white py-1 px-2 sm:px-4 rounded">
                                                         Approve
                                                     </button>
                                                 </td>
                                                 <td className="flex space-x-2">
-                                                    <button
-                                                        className="btn btn-primary btn-sm"
-                                                        onClick={() => setSelectedUser(user)}
-                                                    >
-                                                        View
-                                                    </button>
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); deleteUser(user._id); }}
                                                         className="btn-xl m-1 fs-3 text-primary">
@@ -655,7 +502,7 @@ const AllUsers = () => {
                     </div>
                 </section>
 
-                {selectedUser && <UserDetailsModal user={selectedUser} onClose={() => setSelectedUser(null)} onApprove={approveUser} />}
+                {selectedUser && <UserDetailsModal user={selectedUser} onClose={() => setSelectedUser(null)} />}
             </div>
         </>
     );
