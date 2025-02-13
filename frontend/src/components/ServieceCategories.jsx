@@ -45,19 +45,31 @@ const ServieceCategories = () => {
     }
 
     return (
-        <section className='mt-2'>
+        <section className="mt-2">
             <div className="container">
-                <div className="row row-cols-3 row-cols-lg-5 overflow-hidden">
+                <div className="row row-cols-3 row-cols-lg-5 g-3">
                     {categories.map((item, index) => (
-                        <div key={index} className="col py-2" style={{ cursor: "pointer" }} onClick={() => handleCategoryClick(item.categoryName)}>
-                            <div className="border-0 w-100 h-100 text-center rounded-md">
-                                <figure className='w-full m-0 p-1'>
-                                    <img className='img-fluid w-100 h-100 p-2 border-orange rounded-4 overflow-hidden'
-                                        style={{ objectFit: "cover" }}
+                        <div
+                            key={index}
+                            className="col text-center"
+                            style={{ cursor: "pointer" }}
+                            onClick={() => handleCategoryClick(item.categoryName)}
+                        >
+                            <div className="border-0 w-100 h-100 rounded-md">
+                                <figure className="w-100 m-0 p-2 mb-2 border-orange rounded-4 d-flex justify-content-center align-items-center">
+                                    <img
+                                        className="img-fluid  overflow-hidden"
+                                        style={{
+                                            width: "100%",
+                                            aspectRatio: "1/1", // Ensures square shape
+                                            objectFit: "cover",
+                                            maxWidth: "150px" // Prevents oversized images
+                                        }}
                                         src={item.image}
-                                        alt={item.categoryName} />
+                                        alt={item.categoryName}
+                                    />
                                 </figure>
-                                <h6 className='text-md text-capitalize'>{item.categoryName}</h6>
+                                <h6 className="text-md text-capitalize">{item.categoryName}</h6>
                             </div>
                         </div>
                     ))}

@@ -176,16 +176,45 @@ const ReferredBy = () => {
             <div className="list-group">
               {referrals.length > 0 ? (
                 referrals.map((referral, index) => (
-                  <div className="alert alert-success" key={index}>
-                    <h5>{referral.name}</h5>
-                    <p>{referral.phone}</p>
-                    <p><strong>Referrals:</strong> {referral.referrals.length}</p>
+                  <div
+                    className="alert alert-success p-4 rounded-lg shadow-md"
+                    key={index}
+                  >
+                    <div className="flex flex-wrap sm:flex-col justify-between gap-3">
+                      {/* Left Section */}
+                      <div className="flex flex-col">
+                        <h5 className="text-lg font-semibold">
+                          User Name: {referral.name}
+                        </h5>
+                        <a
+                          href={`tel:${referral.phone}`}
+                          className="text-md font-bold text-blue-600 hover:underline"
+                        >
+                          📞 Call: {referral.phone}
+                        </a>
+                      </div>
+
+                      {/* Right Section */}
+                      <div className="flex flex-col sm:items-start">
+                        <p>
+                          <strong>Referrals:</strong> {referral.referrals.length}
+                        </p>
+                        <p>
+                          <strong>Payment Verified:</strong>{" "}
+                          {referral.paymentVerified ? "✅ Yes" : "❌ No"}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 ))
               ) : (
-                <div className="alert alert-warning">No referrals found.</div>
+                <div className="alert alert-warning text-center p-4 rounded-lg">
+                  No referrals found.
+                </div>
               )}
             </div>
+
+
           )}
         </div>
       </div>

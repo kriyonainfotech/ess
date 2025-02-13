@@ -69,7 +69,7 @@ const SearchResult = ({ Usersdata, token }) => {
 
         setLoading(true);
         try {
-            const response = await axios.post(`${backend_API}/request/sentRequest`, { receiverId: user._id, message: requestMessage }, {
+            const response = await axios.post(`${backend_API}/request/sentRequest`, { receiverId: Usersdata._id, message: requestMessage }, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,

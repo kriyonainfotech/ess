@@ -8,10 +8,10 @@ const getReferrals = async (req, res) => {
 
     // Find the user and populate their referrals up to 3 levels
     const user = await UserModel.findById(userId)
-      .select("name phone email referrals")
+      .select("name phone email referrals paymentVerified")
       .populate({
         path: "referrals",
-        select: "name phone email referrals",
+        select: "name phone email referrals paymentVerified",
         populate: {
           path: "referrals",
           select: "name phone email referrals",
@@ -31,26 +31,26 @@ const getReferrals = async (req, res) => {
 
     // Find users who registered with this user's referral code
     const referredUsers = await UserModel.find({ referredBy: userId })
-      .select("name phone email referrals")
+      .select("name phone email referrals paymentVerified")
       .populate({
         path: "referrals",
         select: "name phone email",
       });
+    console.log(referredUsers, "ru");
+    // // Function to recursively count referrals
+    // const countReferrals = (referrals) => {
+    //   let count = referrals.length;
+    //   referrals.forEach((referral) => {
+    //     if (referral.referrals) {
+    //       count += countReferrals(referral.referrals);
+    //     }
+    //   });
+    //   return count;
+    // };
 
-    // Function to recursively count referrals
-    const countReferrals = (referrals) => {
-      let count = referrals.length;
-      referrals.forEach((referral) => {
-        if (referral.referrals) {
-          count += countReferrals(referral.referrals);
-        }
-      });
-      return count;
-    };
-
-    // Calculate referral counts
-    const directReferralCount = user.referrals.length;
-    const totalReferralCount = countReferrals(user.referrals);
+    // // Calculate referral counts
+    // const directReferralCount = user.referrals.length;
+    // const totalReferralCount = countReferrals(user.referrals);
 
     return res.status(200).send({
       success: true,
@@ -60,12 +60,12 @@ const getReferrals = async (req, res) => {
         phone: user.phone,
         email: user.email,
         referrals: user.referrals, // Direct referrals
-        referralCounts: {
-          direct: directReferralCount,
-          total: totalReferralCount, // Includes all levels
-        },
+        // referralCounts: {
+        //   direct: directReferralCount,
+        //   total: totalReferralCount, // Includes all levels
+        // },
       },
-      referredUsers: referredUsers, // Users who used this user's referral code
+      referredUsers, // Users who used this user's referral code
     });
   } catch (error) {
     console.error(error);

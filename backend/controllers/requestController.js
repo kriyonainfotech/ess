@@ -196,6 +196,7 @@ const sentRequest = async (req, res) => {
   try {
     const { receiverId } = req.body;
     const senderId = req.user.id;
+    console.log(receiverId, senderId);
 
     console.log("🔍 Fetching sender and receiver details...");
 
@@ -239,7 +240,10 @@ const sentRequest = async (req, res) => {
 
     // ✅ Check if a pending request already exists (using requestId)
     const existingSentRequest = sender.sended_requests.find(
-      (req) => req.user.toString() === receiverId && req.status === "pending"
+      (req) =>
+        req.user &&
+        req.user.toString() === receiverId &&
+        req.status === "pending"
     );
 
     if (existingSentRequest) {
@@ -1148,7 +1152,7 @@ const getSentRequests = async (req, res) => {
       .populate({
         path: "sended_requests.user",
         select:
-          "name phone email profilePic businessCategory businessName userAverageRating providerAverageRating",
+          "name phone email profilePic address businessCategory businessName businessAddress fcmToken userstatus averageRating ratings providerAverageRating providerRatings userAverageRating userRatings businessDetaile",
         options: { lean: true },
       })
       .lean();
@@ -1170,10 +1174,10 @@ const getSentRequests = async (req, res) => {
         profilePic: req.user?.profilePic,
         businessCategory: req.user?.businessCategory,
         businessName: req.user?.businessName,
-        userAverageRating: req.user?.userAverageRating,
-        providerAverageRating: req.user?.providerAverageRating,
+        businessAddress: req.user?.businessAddress,
         status: req.status,
         date: req.date,
+        providerrating: req.providerrating,
       })) || [];
 
     // console.log(
@@ -1213,7 +1217,7 @@ const getReceivedRequests = async (req, res) => {
       .populate({
         path: "received_requests.user",
         select:
-          "name phone email profilePic businessCategory businessName providerAverageRating userAverageRating",
+          "name phone email profilePic address businessCategory businessName businessAddress fcmToken userstatus providerAverageRating userAverageRating  businessDetaile userRating",
         options: { lean: true },
       })
       .lean();
@@ -1233,17 +1237,24 @@ const getReceivedRequests = async (req, res) => {
         phone: req.user?.phone,
         email: req.user?.email,
         profilePic: req.user?.profilePic,
+        address: req.user?.address,
         businessCategory: req.user?.businessCategory,
         businessName: req.user?.businessName,
-        userAverageRating: req.user?.userAverageRating,
+        businessAddress: req.user?.businessAddress,
+        fcmToken: req.user?.fcmToken,
+        userstatus: req.user?.userstatus,
         providerAverageRating: req.user?.providerAverageRating,
+        userAverageRating: req.user?.userAverageRating,
+        businessDetaile: req.user?.businessDetaile,
+        received_requests: req.user?.received_requests,
         status: req.status,
         date: req.date,
+        userrating: req.userrating,
       })) || [];
 
-    // console.log(
-    //   `✅ [SUCCESS] Retrieved ${receivedRequests.length} received requests.`
-    // );
+    console.log(
+      `✅ [SUCCESS] Retrieved ${receivedRequests} received requests.`
+    );
     return res.status(200).json({
       success: true,
       message: "📥 Received requests retrieved successfully!",
@@ -1415,7 +1426,7 @@ const updateRequestStatus = async (req, res) => {
     if (status === "cancelled") {
       updateQueries = [
         User.updateOne(
-          { _id: userId, "received_requests.requestId": requestId },
+          { _id: request.user, "received_requests.requestId": requestId },
           { $set: { "received_requests.$.status": status } }
         ),
         User.updateOne(
@@ -1445,6 +1456,11 @@ const updateRequestStatus = async (req, res) => {
         ),
       ];
     }
+
+    console.log(
+      updateQueries,
+      "uq---------------------------------------------------------------------"
+    );
     // Run updates in parallel and wait for both to complete
     const [userUpdate, otherUserUpdate] = await Promise.all(updateQueries);
 
@@ -1621,7 +1637,7 @@ const getSendedRequestsMobile = async (req, res) => {
       .populate({
         path: "sended_requests.user",
         select:
-          "name phone email profilePic address businessCategory businessName businessAddress fcmToken userstatus averageRating ratings providerAverageRating providerRatings userAverageRating userRatings businessDetaile",
+          "name phone email profilePic address businessCategory businessName businessAddress fcmToken userstatus averageRating ratings providerAverageRating providerRatings userAverageRating userRatings businessDetaile sended_requests",
         options: { lean: true },
       })
       .lean();
@@ -1699,7 +1715,7 @@ const getReceivedRequestsMobile = async (req, res) => {
       .populate({
         path: "received_requests.user",
         select:
-          "name phone email profilePic address businessCategory businessName businessAddress fcmToken userstatus averageRating ratings providerAverageRating providerRatings userAverageRating userRatings businessDetaile",
+          "name phone email profilePic address businessCategory businessName businessAddress fcmToken userstatus averageRating ratings providerAverageRating userAverageRating  businessDetaile userRating",
         options: { lean: true },
       })
       .lean();
@@ -1727,13 +1743,14 @@ const getReceivedRequestsMobile = async (req, res) => {
       averageRating: req.user?.averageRating,
       ratings: req.user?.ratings,
       providerAverageRating: req.user?.providerAverageRating,
-      providerRatings: req.user?.providerRatings,
+      // providerRatings: req.user?.providerRatings,
       userAverageRating: req.user?.userAverageRating,
-      userRatings: req.user?.userRatings,
+      // userRatings: req.user?.userRatings,
       businessDetaile: req.user?.businessDetaile,
+      received_requests: req.user?.received_requests,
       status: req.status,
       date: req.date,
-      providerrating: req.providerrating,
+      userrating: req.userrating,
     }));
     // console.log(receivedRequests, "received requests mobile");
 
@@ -1762,6 +1779,10 @@ const getUsersWithRequestsCounts = async (req, res) => {
         $set: {
           sended_requests: [],
           received_requests: [],
+          userAverageRating: 0,
+          providerAverageRating: 0,
+          providerRatings: [],
+          userRatings: [],
         },
       }
     );

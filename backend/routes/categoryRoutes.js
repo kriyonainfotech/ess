@@ -34,7 +34,7 @@ const storage = new CloudinaryStorage({
 });
 const upload = multer({ storage: storage });
 router.post("/addCategory", upload.single("category"), addCategory);
-router.post("/updateCategory", upload.single("category"), updateCategory);
+router.post("/updateCategory", upload.single("categoryImg"), updateCategory);
 router.delete("/deleteCategory", deleteCategory);
 router.get("/getAllCategory", getAllCategory);
 // router.get("/getUsersByCategory", getUsersByBCategory);

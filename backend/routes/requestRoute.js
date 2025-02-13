@@ -39,7 +39,7 @@ router.get("/getSentRequests", verifyToken, getSentRequests);
 router.get("/getReceivedRequests", verifyToken, getReceivedRequests);
 
 router.post("/receivedRequest", verifyToken, receivedRequest);
-router.post("/receivedRequestMobile", receivedRequestMobile);
+// router.post("/receivedRequestMobile", receivedRequestMobile);
 
 router.post("/cancelRequest", verifyToken, cancelRequest);
 router.post("/cancelRequestMobile", cancelRequestMobile);
@@ -59,8 +59,8 @@ router.delete("/deleteRequest", deleteRequest);
 
 router.post("/getSendedRequestsMobile", getSendedRequestsMobile);
 router.post("/getReceivedRequestsMobile", getReceivedRequestsMobile);
-router.get("/count", getUsersWithRequestsCounts);
-// Delete all sent requests for the authenticated user
+router.post("/count", getUsersWithRequestsCounts);
+
 router.delete("/deleteSentRequests", async (req, res) => {
   try {
     const { userId } = req.body;

@@ -569,7 +569,7 @@ const ReceivedRequest = ({ receivedRequest, setReceivedRequest }) => {
                                 } className={`bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden }`}>
                                     <div className="relative">
                                         <img
-                                            className="w-full h-70 object-cover object-top"
+                                            className="w-full h-[400px] object-cover object-top"
 
                                             src={request.profilePic || ProfileIcon}
                                             alt="Profile"
@@ -595,7 +595,8 @@ const ReceivedRequest = ({ receivedRequest, setReceivedRequest }) => {
                                         <p className='text-sm text-gray-600'>{request.email || "No email provided"}</p>
                                         <div className='flex items-center mt-2'>
                                             <strong className='pr-2'>User Rating:</strong>
-                                            {renderStars(request.userAverageRating || 0, 10)}
+                                            {renderStars(request?.userrating?.value
+                                                || 0, 10)}
                                             <span className='pl-2'>{request.userAverageRating || 0}</span>
                                         </div>
                                         {/* <div className='flex items-center mt-2'>

@@ -62,17 +62,24 @@ const updateCategory = async (req, res) => {
     let imageUrl = category.image; // Keep existing image if no new image is uploaded
 
     if (req.file) {
-      // Delete the old image from Cloudinary
+      // Validate file type
+      if (
+        !["image/jpeg", "image/png", "image/webp"].includes(req.file.mimetype)
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid file format. Only JPG, PNG, and WEBP are allowed.",
+        });
+      }
+
+      // Delete old image if exists
       if (imageUrl) {
-        const publicId = getPublicIdFromUrl(imageUrl); // Extract Cloudinary public ID
+        const publicId = getPublicIdFromUrl(imageUrl);
         if (publicId) {
           await cloudinary.uploader.destroy(publicId);
-        } else {
-          console.log("Could not extract publicId from URL:", imageUrl);
         }
       }
 
-      // Save the new image URL
       imageUrl = req.file.path;
     }
 
@@ -86,7 +93,12 @@ const updateCategory = async (req, res) => {
       category,
     });
   } catch (error) {
-    console.error("Error updating category:", error);
+    if (error instanceof multer.MulterError) {
+      return res
+        .status(400)
+        .json({ success: false, message: `Multer error: ${error.message}` });
+    }
+    console.log("Error updating category:", error);
     res.status(500).json({ success: false, message: "Server error", error });
   }
 };
