@@ -11,5 +11,6 @@ routes.use("/user", require("./ratingRoute"));
 routes.use("/referal", require("./referralRoute"));
 routes.use("/payment", require("./paymentRoute"));
 routes.use("/support", require("./supportRoute"));
+routes.use("/remark", require("./remarkRoute"));
 
 module.exports = routes;

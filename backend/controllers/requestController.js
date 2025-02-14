@@ -1156,7 +1156,6 @@ const getSentRequests = async (req, res) => {
         options: { lean: true },
       })
       .lean();
-
     if (!user) {
       console.warn(`❌ [WARN] User with ID ${userId} not found.`);
       return res
@@ -1175,18 +1174,19 @@ const getSentRequests = async (req, res) => {
         businessCategory: req.user?.businessCategory,
         businessName: req.user?.businessName,
         businessAddress: req.user?.businessAddress,
+        sended_requests: req.user?.sended_requests,
         status: req.status,
         date: req.date,
         providerrating: req.providerrating,
       })) || [];
 
-    // console.log(
-    //   `✅ [SUCCESS] Retrieved ${sendedRequests.length} sent requests.`
-    // );
+    console.log(`✅ [SUCCESS] Retrieved ${sendedRequests} sent requests.`);
+
     return res.status(200).json({
       success: true,
       message: "📩 Sent requests retrieved successfully!",
       sendedRequests,
+      user,
     });
   } catch (error) {
     console.error("❌ [ERROR] Failed to fetch sent requests:", error);

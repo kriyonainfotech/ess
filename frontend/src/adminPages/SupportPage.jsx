@@ -21,6 +21,7 @@ const SupportPage = () => {
                     'Authorization': `Bearer ${token}`,
                 }
             });
+            console.log(response.data, 'tickets')
             setTickets(response.data);
         } catch (error) {
             setErrorMessage(error?.response?.data?.message || 'Failed to fetch tickets.');
@@ -98,22 +99,32 @@ const SupportPage = () => {
                         <table className="table table-striped border mx-auto overflow-hidden">
                             <thead>
                                 <tr>
+                                    <th>Sr.no</th>
+                                    <th>User</th>
+                                    <th>Phone</th>
+                                    <th>mail</th>
                                     <th>Issue</th>
                                     <th>Description</th>
-                                    <th>Status</th>
-                                    <th>User</th>
                                     <th>Resolution Message</th>
+                                    <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {tickets.map((ticket) => (
+                                {tickets.map((ticket, index) => (
                                     <tr key={ticket._id}>
+                                        <th>{++index}</th>
+                                        <td>
+                                            <span>{ticket?.userId?.name}</span>
+                                        </td>
+                                        <td>{ticket?.userId?.phone}</td>
+                                        <td>
+                                            <span>{ticket?.userId?.email}</span>
+                                        </td>
                                         <td>{ticket.issue}</td>
                                         <td>{ticket.description}</td>
-                                        <td>{ticket.status}</td>
-                                        <td>{ticket?.userId?.name}</td>
                                         <td>{ticket.resolutionMessage || 'No resolution yet'}</td>
+                                        <td>{ticket.status}</td>
                                         <td>
                                             {ticket.status === 'Pending' ? (
                                                 <div className='d-flex flex-column'>

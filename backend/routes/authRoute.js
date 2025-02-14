@@ -32,6 +32,7 @@ const {
   getUsersByBCategory,
   updateUserAddressAndAadhar,
   setReferral,
+  deleteAdharPics,
 } = require("../controllers/AuthController2");
 const router = express.Router();
 
@@ -101,6 +102,8 @@ router.put("/setUserStatus", verifyToken, setUserStatus);
 router.put("/setUserStatusMobile", setUserStatusMobile);
 router.put("/updateRoleByEmail", updateRoleByEmail);
 router.post("/getUsersByBCategory", getUsersByBCategory);
+
+router.delete("/delete-aadhar", deleteAdharPics);
 
 // forgotpassword and reset password apis
 router.post("/forgot-password", forgotPassword);

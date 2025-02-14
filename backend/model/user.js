@@ -47,13 +47,6 @@ const userSchema = new mongoose.Schema(
       unique: true,
       minlength: 12,
       maxlength: 12,
-      validate: {
-        validator: function (v) {
-          return /^\d{12}$/.test(v);
-        },
-        message: (props) =>
-          `${props.value} is not a valid Aadhar number! Must be 12 digits.`,
-      },
     },
     password: {
       type: String,

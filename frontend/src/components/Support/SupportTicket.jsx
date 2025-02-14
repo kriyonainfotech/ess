@@ -42,52 +42,53 @@ const SupportTicket = () => {
 
     return (
         <>
-        <AdminNavbar/>
-        <UserSideBar/>
-        <ProfileSidebar/>
-        
+            <AdminNavbar />
+            <UserSideBar />
+            <ProfileSidebar />
+
             <section className='py-32'>
                 <div className="container">
                     <div className="row">
-                    <h4 className='pb-3'>Your Support Tickets</h4>
-                <div className="overflow-x-auto border-2 rounded-3">
-                    {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
-                    <table className="table table-striped ">
-                        <thead>
-                            <tr>
-                                <th>Issue</th>
-                                <th>Description</th>
-                                <th>Status</th>
-                                <th>Resolution Message</th>
-                                <th>Created At</th>
-                                {/* <th>Updated At</th> */}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {tickets.map((ticket) => (
-                                <tr key={ticket._id}>
-                                    <td>{ticket.issue}</td>
-                                    <td>{ticket.description}</td>
-                                    <td>{ticket.status}</td>
-                                    <td>
-                                        {ticket.status === 'Resolved' && ticket.resolutionMessage ? (
-                                            <p>{ticket.resolutionMessage}</p>
-                                        ) : (
-                                            <p>No resolution yet</p>
-                                        )}
-                                    </td>
-                                    <td>{formatDate(ticket.createdAt)}</td>
-                                    {/* <td>{ticket.updatedAt ? formatDate(ticket.updatedAt) : "Not updated yet"}</td> */}
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            
+                        <h4 className='pb-3'>Your Support Tickets</h4>
+                        <div className="px-0 border-2 rounded-3">
+                            {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
+                            <table className="table table-striped ">
+                                <thead>
+                                    <tr>
+                                        {/* <th>Sr.no</th> */}
+                                        <th>Issue</th>
+                                        <th>Description</th>
+                                        <th>Status</th>
+                                        <th>Resolution Message</th>
+                                        <th>Created At</th>
+                                        {/* <th>Updated At</th> */}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {tickets.map((ticket) => (
+                                        <tr key={ticket._id}>
+                                            <td>{ticket.issue}</td>
+                                            <td>{ticket.description}</td>
+                                            <td>{ticket.status}</td>
+                                            <td>
+                                                {ticket.status === 'Resolved' && ticket.resolutionMessage ? (
+                                                    <p>{ticket.resolutionMessage}</p>
+                                                ) : (
+                                                    <p>No resolution yet</p>
+                                                )}
+                                            </td>
+                                            <td>{formatDate(ticket.createdAt)}</td>
+                                            {/* <td>{ticket.updatedAt ? formatDate(ticket.updatedAt) : "Not updated yet"}</td> */}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
                     </div>
                 </div>
             </section>
-              
+
         </>
     );
 };

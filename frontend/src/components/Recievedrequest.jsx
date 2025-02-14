@@ -597,7 +597,7 @@ const ReceivedRequest = ({ receivedRequest, setReceivedRequest }) => {
                                             <strong className='pr-2'>User Rating:</strong>
                                             {renderStars(request?.userrating?.value
                                                 || 0, 10)}
-                                            <span className='pl-2'>{request.userAverageRating || 0}</span>
+                                            <span className='pl-2'>{request?.userrating?.value || 0}</span>
                                         </div>
                                         {/* <div className='flex items-center mt-2'>
                                             <strong className=''>Service Rating:</strong>

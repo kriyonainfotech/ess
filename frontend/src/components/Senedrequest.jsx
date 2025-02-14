@@ -156,7 +156,7 @@ const Senedrequest = ({ sendedRequest, setSendedRequest }) => {
                                     <div className="flex items-center">
                                         <strong className="pe-1">User Rating:</strong>
                                         {renderStars(send?.providerrating?.value || 0, 10)}
-                                        <span className="pl-2">{send.providerAverageRating || 0}</span>
+                                        <span className="pl-2">{send?.providerrating?.value || 0}</span>
                                     </div>
                                     {/* <div className="flex items-center mt-2">
                                         <p className="text-sm font-semibold pe-1">UserRating:</p>

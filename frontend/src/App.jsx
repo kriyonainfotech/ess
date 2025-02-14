@@ -20,6 +20,7 @@ import ResetPassword from "./components/ResetPassword";
 import AboutUs from "./Pages/AboutUs";
 import CreatUser from "./adminPages/CreatUser";
 import AssignReferrals from "./adminPages/AssignRefferal";
+import RemarkPage from "./adminPages/RemarkPage";
 
 // Lazy-loaded components
 const Login = lazy(() => import("./components/Login"));
@@ -112,6 +113,7 @@ export default function App() {
                 <Route path="/admin/aprove" element={<ProtectAdmin><AproveRegister /></ProtectAdmin>} />
                 <Route path="/admin/support" element={<ProtectAdmin><SupportPage /></ProtectAdmin>} />
                 <Route path="/admin/creatUser" element={<ProtectAdmin><CreatUser /></ProtectAdmin>} />
+                <Route path="/admin/users/addremark" element={<ProtectAdmin><RemarkPage /></ProtectAdmin>} />
               </Routes>
             </Router>
           </Suspense>

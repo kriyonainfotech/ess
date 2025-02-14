@@ -52,7 +52,9 @@ ul {
 .bg-green-100 {
   background-color: #0ab160 !important;
 }
-
+.h-70 {
+  height: 500px;
+}
 .bg-green {
   background-color: var(--bg-secondary) !important;
 }

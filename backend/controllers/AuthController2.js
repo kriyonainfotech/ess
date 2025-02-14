@@ -23,7 +23,6 @@ const getUsersByBCategory = async (req, res) => {
     const users = await UserModel.find({
       businessCategory: category,
       "address.city": city,
-      userstatus: "available",
       paymentVerified: true,
       isAdminApproved: true,
     }).select(
@@ -42,7 +41,7 @@ const getUsersByBCategory = async (req, res) => {
         users: [],
       });
     }
-
+    console.log(users, "bc users");
     // Send response with fetched users
     res.status(200).json({
       success: true,
@@ -216,8 +215,53 @@ const setReferral = async (req, res) => {
   }
 };
 
+// admin use only
+const deleteAdharPics = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    console.log(userId);
+    // Fetch user
+
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    const cloudinary = require("cloudinary").v2;
+
+    const deleteCloudinaryImage = async (imageUrl) => {
+      if (imageUrl) {
+        const publicId = imageUrl.split("/").pop().split(".")[0]; // Extract public ID
+        await cloudinary.uploader.destroy(publicId);
+      }
+    };
+
+    // await deleteCloudinaryImage(user.profilePic);
+    await deleteCloudinaryImage(user.frontAadhar);
+    await deleteCloudinaryImage(user.backAadhar);
+
+    // Update only frontAadhar and backAadhar (Don't touch aadharNumber)
+    await UserModel.findByIdAndUpdate(userId, {
+      $unset: { frontAadhar: 1, backAadhar: 1 }, // Removes these fields
+    });
+
+    return res.json({
+      success: true,
+      message: "Aadhar images deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting Aadhar images:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
+  }
+};
+
 module.exports = {
   getUsersByBCategory,
   setReferral,
   updateUserAddressAndAadhar,
+  deleteAdharPics,
 };
