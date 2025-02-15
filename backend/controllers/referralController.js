@@ -1,6 +1,7 @@
 const UserModel = require("../model/user"); // Adjust path based on your project structure
 const { distributeReferralRewards } = require("../services/referralService"); // If you create a referral service later
 const { sendNotification } = require("./sendController");
+const mongoose = require("mongoose");
 
 const getReferrals = async (req, res) => {
   try {
@@ -237,27 +238,34 @@ const getReffaredById = async (req, res) => {
 const getUserWalletBalance = async (req, res) => {
   try {
     const userId = req.params.id;
-
+    const userObjectId = new mongoose.Types.ObjectId(userId);
     // Optimized query with field projection
     const user = await UserModel.findById(userId)
       .select("walletBalance earningsHistory")
+      .populate({
+        path: "earningsHistory.sourceUser",
+        select: "name email profilePic referredBy createdAt", // Select only required fields
+      })
       .lean();
-
+    console.log(user, "user");
     if (!user) {
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
+    const filteredEarnings = user.earningsHistory.filter((earning) =>
+      earning.sourceUser?.referredBy?.some((refId) =>
+        refId.equals(userObjectId)
+      )
+    );
 
     // Optimize response payload
     const response = {
       success: true,
       walletBalance: user.walletBalance,
       // Send only recent 10 transactions by default
-      earningsHistory: user.earningsHistory
-        .sort((a, b) => b.date - a.date)
-        .slice(0, 10),
+      earningsHistory: filteredEarnings,
     };
     console.log(response, "response of wallet balance");
 

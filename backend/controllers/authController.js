@@ -245,8 +245,16 @@ const loginUser = async (req, res) => {
 
     const user = await UserModel.findOne(
       { phone },
-      "-sesended_requests -received_requests"
-    );
+      "-sended_requests -received_requests"
+    )
+      .populate({
+        path: "referrals",
+        select: "name phone email profilePic paymentVerified createdAt",
+      })
+      .populate({
+        path: "earningsHistory.sourceUser",
+        select: "name phone referredBy ",
+      });
 
     if (!user) {
       return res.status(400).json({
@@ -254,6 +262,8 @@ const loginUser = async (req, res) => {
         message: "Invalid Phone or Password",
       });
     }
+
+    console.log(user, "login user");
 
     const isMatch = await bcrypt.compare(password, user.password);
 
@@ -1282,9 +1292,17 @@ const forgotPassword = async (req, res) => {
 
       // Generate 6-digit reset code
       const resetCode = crypto.randomInt(100000, 999999).toString();
-      user.resetCode = resetCode;
-      user.resetCodeExpires = Date.now() + 10 * 60 * 1000; // Code valid for 10 minutes
-      await user.save();
+      // Update user without triggering full validation
+      await UserModel.updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            resetCode,
+            resetCodeExpires: Date.now() + 10 * 60 * 1000, // Code valid for 10 minutes
+          },
+        }
+      );
+
       console.log(user, "user1");
       // Send reset code via email
       await sendEmail(
@@ -1351,6 +1369,20 @@ const verifyCode = async (req, res) => {
 const resetPassword = async (req, res) => {
   const { email, newPassword } = req.body;
   try {
+    if (!email) {
+      return res.status(400).send({
+        success: false,
+        message: "email required.",
+      });
+    }
+
+    if (!newPassword || newPassword.length < 4) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be at least 4 characters long.",
+      });
+    }
+
     const user = await UserModel.findOne({
       email,
       resetCodeExpires: { $gt: Date.now() },
@@ -1365,11 +1397,19 @@ const resetPassword = async (req, res) => {
     const salt = await bcrypt.genSalt(10); // Generate salt
     const hashedPassword = await bcrypt.hash(newPassword, salt); // Hash the password
 
-    // Update the user's password
-    user.password = hashedPassword;
-    user.resetCode = undefined; // Clear the reset code
-    user.resetCodeExpires = undefined; // Clear the expiration time
-    await user.save();
+    // Update the user's password without triggering full validation
+    await UserModel.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          password: hashedPassword,
+        },
+        $unset: {
+          resetCode: "",
+          resetCodeExpires: "",
+        },
+      }
+    );
 
     return res
       .status(200)

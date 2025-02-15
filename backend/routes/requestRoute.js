@@ -1,16 +1,8 @@
 const express = require("express");
 const {
   sentRequest,
-  getUserRequests,
-  getAllRequests,
-  receivedRequest,
-  cancelRequest,
-  workDone,
   deleteRequest,
   sentRequestMobile,
-  receivedRequestMobile,
-  cancelRequestMobile,
-  workDoneMobile,
   getSendedRequestsMobile,
   getReceivedRequestsMobile,
   getSentRequests,
@@ -31,21 +23,8 @@ const router = express.Router();
 router.post("/sentRequest", verifyToken, sentRequest);
 router.post("/sentRequestMobile", sentRequestMobile);
 
-router.get("/getUserRequests", verifyToken, getUserRequests);
-
-router.get("/getAllRequests", getAllRequests);
-
 router.get("/getSentRequests", verifyToken, getSentRequests);
 router.get("/getReceivedRequests", verifyToken, getReceivedRequests);
-
-router.post("/receivedRequest", verifyToken, receivedRequest);
-// router.post("/receivedRequestMobile", receivedRequestMobile);
-
-router.post("/cancelRequest", verifyToken, cancelRequest);
-router.post("/cancelRequestMobile", cancelRequestMobile);
-
-router.post("/workDone", verifyToken, workDone);
-router.post("/workDoneMobile", workDoneMobile);
 
 router.post("/updateRequestStatus", verifyToken, updateRequestStatus);
 router.post("/updateStatusMobile", updateRequestStatusMobile);

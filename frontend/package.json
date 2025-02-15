@@ -24,6 +24,7 @@
     "react-icons": "^5.4.0",
     "react-infinite-scroll-component": "^6.1.0",
     "react-loader-spinner": "^6.1.6",
+    "react-loading-skeleton": "^3.5.0",
     "react-router-dom": "^6.26.0",
     "react-slick": "^0.30.3",
     "react-slideshow-image": "^4.3.2",

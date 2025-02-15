@@ -29,7 +29,7 @@ const UpdateProfilePic = ({ user }) => {
             const data = await response.data;
             console.log(data.message, "Image uploaded");
             if (response.status === 200) {
-                window.location.reload();
+                // window.location.reload();
                 toast("Profile Updated Successfully");
             }
         } catch (error) {
@@ -40,13 +40,20 @@ const UpdateProfilePic = ({ user }) => {
             setLoading(false);
         }
     };
-
     const handleProfilePictureChange = async (e) => {
         const file = e.target.files[0];
+
         if (file) {
+            if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                toast.error("File size should be less than 2MB.");
+                setTimeout(() => window.location.reload(), 3000); // Delay reload to let toast show
+                return;
+            }
+
             const blobUrl = URL.createObjectURL(file);
             setProfilePic(file);
             setProfilePicPreview(blobUrl);
+
             await uploadImage(file);
         }
     };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { FaPhone } from 'react-icons/fa6';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
@@ -6,40 +6,63 @@ import starGold from "../../public/starRating.png";
 import starSilver from "../../public/startSilver.png";
 import ProfileIcon from "../../public/User_icon.webp";
 import axios from 'axios';
+import { UserContext } from '../UserContext';
 const backend_API = import.meta.env.VITE_API_URL;
 
 
 const Senedrequest = ({ sendedRequest, setSendedRequest }) => {
-
+    const user = useContext(UserContext);
+    // console.log(user.user._id)
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [rating, setRating] = useState(0);
     const token = JSON.parse(localStorage.getItem('token'));
     console.log(sendedRequest, "sendedRequest");
-    const cancelRequest = async (id, requestId, status) => {
-        console.log(id, status, requestId, "id, status, requestId");
-        try {
-            const response = await axios.post(`${backend_API}/request/updateRequestStatus`, { userId: id, requestId, status }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            console.log(response, "response cancel request");
-            if (response.status === 200) {
-                toast.success(`Request ${status}`);
-                setSendedRequest((prevRequests) =>
-                    prevRequests.map((request) =>
-                        request.requestId === requestId
-                            ? { ...request, status: status }
-                            : request
-                    )
-                );
 
-            } else {
-                toast.error("Failed to update request");
-            }
-        } catch (error) {
-            console.log(error, "error");
-            toast.error(error?.response?.data?.message || "Failed to update request");
+    const cancelRequest = (requestId) => {
+        const userId = user?.user?._id;
+
+        if (!userId) {
+            toast.error("User not found!");
+            return;
         }
 
+        toast.info(
+            <div>
+                <p>Are you sure you want to cancel this request?</p>
+                <div className="flex justify-end gap-3 mt-2">
+                    <button
+                        className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700"
+                        onClick={async () => {
+                            toast.dismiss(); // Close toast before making API call
+                            try {
+                                const { data } = await axios.delete(`${backend_API}/request/deleteRequest`, {
+                                    data: { requestId, userId },
+                                });
+
+                                if (data.success) {
+                                    toast.success("Request deleted successfully!");
+                                    // Optionally update UI (e.g., remove request from state)
+                                } else {
+                                    toast.error(data.message || "Failed to delete request.");
+                                }
+                            } catch (error) {
+                                console.error("Error deleting request:", error);
+                                toast.error(error.response?.data?.message || "An error occurred while deleting the request.");
+                            }
+                        }}
+                    >
+                        Yes
+                    </button>
+                    <button
+                        className="px-3 py-1 bg-gray-400 text-white rounded-md hover:bg-gray-500"
+                        onClick={() => toast.dismiss()} // Close toast if No is clicked
+                    >
+                        No
+                    </button>
+                </div>
+            </div>,
+            { autoClose: false, closeOnClick: false }
+        );
     };
 
 
@@ -111,15 +134,13 @@ const Senedrequest = ({ sendedRequest, setSendedRequest }) => {
                             <div
                                 key={i}
                                 title={
-                                    send.status === "cancelled"
-                                        ? "Sender has cancelled the request."
-                                        : send.status === "rejected"
-                                            ? "Receiver has rejected the request."
-                                            : send.status === "completed"
-                                                ? "Request completed rate the user"
-                                                : send.status === "accepted"
-                                                    ? "Request accepted contact the user"
-                                                    : ""
+                                    send.status === "rejected"
+                                        ? "Receiver has rejected the request."
+                                        : send.status === "completed"
+                                            ? "Request completed rate the user"
+                                            : send.status === "accepted"
+                                                ? "Request accepted contact the user"
+                                                : ""
                                 }
                                 className={`bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden ${["rejected", "cancelled"].includes(send.status)
                                     ? "opacity-50 grayscale"
@@ -158,11 +179,6 @@ const Senedrequest = ({ sendedRequest, setSendedRequest }) => {
                                         {renderStars(send?.providerrating?.value || 0, 10)}
                                         <span className="pl-2">{send?.providerrating?.value || 0}</span>
                                     </div>
-                                    {/* <div className="flex items-center mt-2">
-                                        <p className="text-sm font-semibold pe-1">UserRating:</p>
-                                        {renderStars(send.userAverageRating || 0, 10)}
-                                        <span className="pl-2">{send.userAverageRating || 0}</span>
-                                    </div> */}
 
                                     {/* Buttons based on request status */}
                                     <div className="mt-4 flex gap-2">
@@ -176,7 +192,7 @@ const Senedrequest = ({ sendedRequest, setSendedRequest }) => {
                                                 </a>
                                                 <button
                                                     className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-                                                    onClick={() => cancelRequest(send.receiverId, send.requestId, "cancelled")}
+                                                    onClick={() => cancelRequest(send.requestId)}
                                                 >
                                                     Cancel
                                                 </button>

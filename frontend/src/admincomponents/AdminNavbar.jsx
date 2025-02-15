@@ -40,13 +40,8 @@ const AdminNavbar = () => {
             icon: <PiLineVertical />
         },
         {
-            title: 'Team',
-            link: '/team',
-            icon: <PiLineVertical />
-        },
-        {
-            title: 'Wallete',
-            link: '/wallete',
+            title: 'Profile',
+            link: '/profile',
             icon: <PiLineVertical />
         },
 
