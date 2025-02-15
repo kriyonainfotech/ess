@@ -11,6 +11,7 @@ const ServieceCategories = () => {
         try {
             setLoading(true);
             const response = await axios.get(`${backend_API}/category/getAllCategory`);
+            console.log(response.data, 'catehome')
             setCategories(response.data.category);
             setLoading(false);
         } catch (error) {

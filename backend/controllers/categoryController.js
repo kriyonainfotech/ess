@@ -136,49 +136,39 @@ const deleteCategory = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error", error });
   }
 };
-
 const getAllCategory = async (req, res) => {
   try {
-    // Fetch all unique categories and sort them alphabetically by categoryName
     const categories = await Category.aggregate([
-      // First stage: Group by categoryName to remove duplicates
+      // Step 1: Sort by updated date to get the latest image for each category
+      { $sort: { updatedAt: -1 } },
+
+      // Step 2: Group by categoryName (case-insensitive)
       {
         $group: {
-          _id: {
-            categoryName: { $toLower: "$categoryName" }, // Convert to lowercase for case-insensitive grouping
-          },
+          _id: { categoryName: { $toLower: "$categoryName" } },
           originalId: { $first: "$_id" },
           categoryName: { $first: "$categoryName" },
-          image: { $first: "$image" },
+          image: { $first: "$image" }, // ✅ Ensures the latest updated image is taken
         },
       },
-      // Second stage: Sort alphabetically
-      {
-        $sort: {
-          "_id.categoryName": 1,
-        },
-      },
-      // Third stage: Project the final format
+
+      // Step 3: Sort categories alphabetically
+      { $sort: { categoryName: 1 } },
+
+      // Step 4: Project final structure
       {
         $project: {
           _id: "$originalId",
-          categoryName: "$categoryName",
-          image: "$image",
+          categoryName: 1,
+          image: 1,
         },
       },
-    ]).collation({ locale: "en", strength: 2 }); // Case-insensitive comparison
+    ]).collation({ locale: "en", strength: 2 }); // Case-insensitive sorting
 
-    // Additional check to ensure no duplicates
-    const uniqueCategories = Array.from(
-      new Map(
-        categories.map((item) => [item.categoryName.toLowerCase(), item])
-      ).values()
-    );
-
-    return res.status(200).send({
+    return res.status(200).json({
       success: true,
       message: "Categories fetched successfully",
-      category: uniqueCategories,
+      category: categories,
     });
   } catch (error) {
     console.error("[ERROR] Failed to fetch categories:", error);

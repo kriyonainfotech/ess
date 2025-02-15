@@ -18,6 +18,11 @@ const Work = () => {
   const [sendedRequest, setSendedRequest] = useState([]);
   const [currentRequest, setCurrentRequest] = useState("Sended Request");
   const [loading, setLoading] = useState(true);
+  const [showContent, setShowContent] = useState(false);
+
+  useEffect(() => {
+    setTimeout(() => setShowContent(true), 50);
+  }, []);
 
   console.log(receivedRequest, "receivedRequest");
 
@@ -73,13 +78,13 @@ const Work = () => {
     fetchRequests(currentRequest);
   }, [currentRequest, fetchRequests]);
 
-  return (
+  return showContent ? (
     <>
       <AdminNavbar />
       <UserSideBar />
       <ProfileSidebar />
 
-      <div className="mt-40 ">
+      <div className="mt-40">
         <section className="bg-gray-50 py-5">
           <div className="container">
             <div className="row">
@@ -116,7 +121,7 @@ const Work = () => {
 
       <Footer />
     </>
-  );
+  ) : null;
 };
 
 export default Work;

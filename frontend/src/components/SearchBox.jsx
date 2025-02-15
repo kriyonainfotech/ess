@@ -16,6 +16,7 @@ const SearchBox = () => {
     setLoading(true)
     try {
       const response = await axios.get(`${backend_API}/category/getAllCategory`);
+      console.log(response.data, 'cate search')
       setCategories(response.data.category);
     } catch (error) {
       console.error("Error fetching categories:", error);

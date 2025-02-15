@@ -21,6 +21,8 @@ const KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID;
 const KEY_SECRET = import.meta.env.VITE_RAZORPAY_KEY_SECRET;
 console.log(KEY_ID, KEY_SECRET);
 
+const DEFAULT_PROFILE_PIC = "https://res.cloudinary.com/dcfm0aowt/image/upload/v1739604108/user/phnbhd4onynoetzdxqjp.jpg";
+
 const Home = () => {
   const { user, setUser } = useContext(UserContext);
   const { fcmToken } = useContext(FCMContext);
@@ -30,6 +32,7 @@ const Home = () => {
   const [bannerImage, setBannerImage] = useState([]);
   const [auth, setAuth] = useState(Boolean(user));
   const [showModal, setShowModal] = useState(user?.paymentVerified === false);
+  const [showProfileUpdateModal, setShowProfileUpdateModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Fetch Categories and Banners
@@ -110,12 +113,24 @@ const Home = () => {
     }
   };
 
-
+  // Handle Profile Picture Update
+  const handleProfileUpdate = () => {
+    navigate("/profile"); // Redirect user to profile update page
+  };
   // Authentication State Management
   useEffect(() => {
     setAuth(Boolean(user));
     if (user?.paymentVerified === false) {
       setShowModal(true);
+    }
+  }, [user]);
+
+  // Check Profile Picture and Show Popup if Default
+  useEffect(() => {
+    if (user?.profilePic === DEFAULT_PROFILE_PIC) {
+      setShowProfileUpdateModal(true);
+    } else {
+      setShowProfileUpdateModal(false);
     }
   }, [user]);
 
@@ -133,6 +148,20 @@ const Home = () => {
             <p>Your payment is not verified. Please complete the verification.</p>
             <button className="btn bg-green text-white" onClick={() => handlePaymentVerify(user._id)} disabled={loading}>
               {loading ? "Verifying..." : "Verify Payment"}
+            </button>
+          </div>
+        </div>
+      )}
+
+
+      {/* Profile Picture Update Modal */}
+      {showProfileUpdateModal && (
+        <div className="modals">
+          <div className="modal-contents">
+            <h5>Update Profile Picture</h5>
+            <p>Please update your profile picture to continue.</p>
+            <button className="btn bg-blue text-white" onClick={handleProfileUpdate}>
+              Update Now
             </button>
           </div>
         </div>

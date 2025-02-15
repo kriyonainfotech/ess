@@ -11,6 +11,7 @@ const {
   getUsersByCategory,
 } = require("../controllers/categoryController");
 const { getUsersByBCategory } = require("../controllers/AuthController2");
+const { migrateAllCategoryImages } = require("../controllers/transferImage");
 
 cloudinary.config({
   cloud_name: "dcfm0aowt",
@@ -38,4 +39,5 @@ router.post("/updateCategory", upload.single("categoryImg"), updateCategory);
 router.delete("/deleteCategory", deleteCategory);
 router.get("/getAllCategory", getAllCategory);
 // router.get("/getUsersByCategory", getUsersByBCategory);
+router.get("/migrateOneCategoryImage", migrateAllCategoryImages);
 module.exports = router;

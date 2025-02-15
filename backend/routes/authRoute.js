@@ -1,4 +1,5 @@
 const express = require("express");
+const User = require("../model/user");
 const {
   registerUser,
   loginUser,
@@ -113,5 +114,42 @@ router.post("/setReferral", setReferral);
 
 // Route to update permanent address and Aadhar number
 router.put("/updateUserAddressAndAadhar", updateUserAddressAndAadhar);
+
+const DEFAULT_PROFILE_PIC =
+  "https://res.cloudinary.com/dcfm0aowt/image/upload/v1739604108/user/phnbhd4onynoetzdxqjp.jpg";
+
+// Get all users' profile picture URLs
+router.get("/profile-pics", async (req, res) => {
+  try {
+    const users = await User.find({}, "profilePic"); // Fetch only profilePic field
+    const updatedUsers = await Promise.all(
+      users.map(async (user) => {
+        if (
+          user.profilePic?.includes(
+            "https://res.cloudinary.com/dosudib3y/image/"
+          )
+        ) {
+          // Update in MongoDB
+          await User.findByIdAndUpdate(user._id, {
+            profilePic: DEFAULT_PROFILE_PIC,
+          });
+
+          return {
+            userId: user._id,
+            profilePic: DEFAULT_PROFILE_PIC, // Replaced URL
+          };
+        }
+        return {
+          userId: user._id,
+          profilePic: user.profilePic || null, // Original URL or null
+        };
+      })
+    );
+
+    res.json({ success: true, data: updatedUsers });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+});
 
 module.exports = router;

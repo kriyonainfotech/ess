@@ -113,12 +113,11 @@ const SearchScreen = () => {
 
   // Fetch all categories at once and cache them
   const fetchCategories = useCallback(async () => {
-    if (categories.length > 0) return; // Prevent unnecessary API calls
-
     setLoading(true);
     try {
       const response = await axios.get(`${backend_API}/category/getAllCategory`);
-      console.log(response, 'categories')
+      console.log(response, "categories");
+
       if (!response.data || !Array.isArray(response.data.category)) {
         throw new Error("Invalid data format");
       }
@@ -126,16 +125,20 @@ const SearchScreen = () => {
       // Ensure unique categories by name (case-insensitive)
       const uniqueCategories = Array.from(
         new Map(
-          response.data.category.map(item => [
-            item.categoryName.toLowerCase(),
-            item
-          ])
+          response.data.category.map((item) => [item.categoryName.toLowerCase(), item])
         ).values()
       ).sort((a, b) => a.categoryName.localeCompare(b.categoryName));
 
-      // Store categories in state and local storage
-      setCategories(uniqueCategories);
-      localStorage.setItem('categories', JSON.stringify(uniqueCategories));
+      // Check if images have changed
+      const storedCategories = localStorage.getItem("categories");
+      if (!storedCategories || JSON.stringify(uniqueCategories) !== storedCategories) {
+        // If different, update localStorage
+        localStorage.setItem("categories", JSON.stringify(uniqueCategories));
+        setCategories(uniqueCategories);
+      } else {
+        console.log("🟢 No changes in categories, using cached data.");
+      }
+
       setError(null);
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -144,7 +147,7 @@ const SearchScreen = () => {
     } finally {
       setLoading(false);
     }
-  }, [categories.length]);
+  }, []);
 
   useEffect(() => {
     fetchCategories();
