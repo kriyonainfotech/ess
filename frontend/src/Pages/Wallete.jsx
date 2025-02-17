@@ -198,7 +198,7 @@ const Wallete = () => {
               <div className="wallete px-0">
 
                 {/* Wallet Overview */}
-                <div className="w-full flex flex-col items-center justify-center p-6 mt-5 bg-red-100 rounded-lg shadow-md">
+                <div className="w-full flex flex-col items-center justify-center p-6 my-5 bg-red-100 rounded-lg shadow-md">
                   {loading ? (
                     <div className="flex items-center justify-center">
                       <div className="spinner-border text-danger" role="status">
@@ -216,7 +216,8 @@ const Wallete = () => {
                         <button
                           className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md disabled:bg-gray-400"
                           onClick={handleWithdraw}
-                          disabled={walletBalance < 120 || loading}
+                          // disabled={walletBalance < 120 || loading}
+                          disabled
                         >
                           {loading ? "Loading..." : `Withdraw ₹${walletBalance >= 120 ? walletBalance : 0}`}
                         </button>
@@ -249,28 +250,7 @@ const Wallete = () => {
                 </div>
 
               </div>
-              {/* Earnings History */}
-              {!loading && !error && earningsHistory.length > 0 && (
-                <div className="col-12 mt-4 p-4 alert alert-warning p-4 rounded-lg shadow-md">
-                  <h4 className="text-center mb-3">Earnings History</h4>
-                  <ul className="list-group">
-                    {earningsHistory.map((earning, index) => (
-                      <li key={index} className="list-group-item alert alert-warning d-flex justify-content-between  align-items-center bg-gray-800">
-                        <p className='text-md'>
-                          <span>{earning?.sourceUser?.name}</span>
-                          <br />
-                          <span className='text-sm'>{new Date(earning?.sourceUser?.createdAt).toLocaleDateString("en-IN", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })}</span>
-                        </p>
-                        <p className="text-black fw-bold">₹{earning.amount}</p>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+
             </div>
           </section>
         </div>

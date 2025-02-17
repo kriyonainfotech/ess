@@ -49,6 +49,7 @@ const ServieceCategories = () => {
         <section className="mt-2">
             <div className="container">
                 <div className="row row-cols-3 row-cols-lg-5 g-3">
+
                     {categories.map((item, index) => (
                         <div
                             key={index}

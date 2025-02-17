@@ -18,7 +18,7 @@ router.get("/getActiveTicket", verifyToken, getActiveTicket);
 router.get("/userTickets", verifyToken, getUserTickets);
 router.delete("/deleteTicket", deleteTicket);
 
-router.post("'addIssueMobile", addIssueMobile);
+router.post("/addIssueMobile", addIssueMobile);
 router.post("/getActiveTicketMobile", getActiveTicketMobile);
 router.post("/getUserTicketsMobile", getUserTicketsMobile);
 

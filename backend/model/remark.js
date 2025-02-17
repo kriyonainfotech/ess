@@ -1,14 +1,20 @@
+// models/Remark.js
 const mongoose = require("mongoose");
 
-const RemarkSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  remarks: [
-    {
-      question: String,
-      checked: Boolean,
+const RemarkSchema = new mongoose.Schema(
+  {
+    remark: {
+      type: String,
+      required: true,
     },
-  ],
-  createdAt: { type: Date, default: Date.now },
-});
+    userStatus: [
+      {
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        is_completed: { type: Boolean, default: false },
+      },
+    ],
+  },
+  { timestamps: true }
+);
 
 module.exports = mongoose.model("Remark", RemarkSchema);

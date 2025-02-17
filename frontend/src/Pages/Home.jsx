@@ -15,16 +15,22 @@ import "../assets/Veryfymodal.css";
 import { toast } from 'react-toastify';
 import { FCMContext } from '../context/FCMContext';
 import Banner from '../components/Benner';
+import OneSignal from "react-onesignal";
 
 const backend_API = import.meta.env.VITE_API_URL;
 const KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID;
 const KEY_SECRET = import.meta.env.VITE_RAZORPAY_KEY_SECRET;
+const ONE_SIGNAL_APP_ID = import.meta.env.VITE_ONE_SIGNAL_APP_ID;
+// console.log("OneSignal App ID:", ONE_SIGNAL_APP_ID); // Debugging
+
+
 console.log(KEY_ID, KEY_SECRET);
 
 const DEFAULT_PROFILE_PIC = "https://res.cloudinary.com/dcfm0aowt/image/upload/v1739604108/user/phnbhd4onynoetzdxqjp.jpg";
 
 const Home = () => {
   const { user, setUser } = useContext(UserContext);
+  console.log(user, 'user')
   const { fcmToken } = useContext(FCMContext);
   const navigate = useNavigate();
 
@@ -34,6 +40,50 @@ const Home = () => {
   const [showModal, setShowModal] = useState(user?.paymentVerified === false);
   const [showProfileUpdateModal, setShowProfileUpdateModal] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // useEffect(() => {
+  //   const ONE_SIGNAL_APP_ID = "810605bf-f0d6-4214-b944-14307d1a5240";
+
+  //   if (!ONE_SIGNAL_APP_ID) {
+  //     console.error("OneSignal App ID is missing!");
+  //     return;
+  //   }
+
+  //   const initializeOneSignal = async () => {
+  //     await OneSignal.init({
+  //       appId: ONE_SIGNAL_APP_ID,
+  //       safari_web_id: "web.onesignal.auto.428d294a-5ce2-44bb-bee0-dec3149a5564",
+  //       notifyButton: { enable: true },
+  //       allowLocalhostAsSecureOrigin: true,
+  //     });
+
+  //     console.log("OneSignal Initialized");
+
+  //     OneSignal.getUserId().then((playerId) => {
+  //       if (playerId) {
+  //         console.log("User's OneSignal Player ID:", playerId);
+  //         sendPlayerIdToBackend(playerId); // Store in the backend
+  //       } else {
+  //         console.log("Player ID not found");
+  //       }
+  //     });
+  //   };
+
+  //   initializeOneSignal();
+  // }, []);
+
+  // const sendPlayerIdToBackend = async (playerId) => {
+  //   try {
+  //     const userId = user.user._id; // Replace with the logged-in user ID
+  //     await fetch(`${backend_API}/notifications/store-onesignal-id`, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ userId, playerId }),
+  //     });
+  //   } catch (error) {
+  //     console.error("Failed to store OneSignal ID:", error);
+  //   }
+  // };
 
   // Fetch Categories and Banners
   useEffect(() => {

@@ -382,7 +382,13 @@ const AllUsers = () => {
                           </button>
                         </td>
                         <td>
-                          <Link to={'/admin/users/addremark'} className='btn btn-sm btn-info'>Add Remarks</Link>
+                          <Link
+                            to="/admin/users/addremark"
+                            state={{ userId: user._id }}
+                            className="btn btn-sm btn-info"
+                          >
+                            Add Remarks
+                          </Link>
                         </td>
                       </tr>
                     ))}

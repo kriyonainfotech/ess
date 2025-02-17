@@ -251,7 +251,9 @@ const getUserTicketsMobile = async (req, res) => {
         .json({ message: "No tickets found for this user" });
     }
 
-    res.status(200).json(tickets);
+    res
+      .status(200)
+      .send({ success: true, message: "users all tickets", tickets: tickets });
   } catch (error) {
     res.status(500).json({
       message: "Failed to fetch tickets",

@@ -26,7 +26,7 @@ const getUsersByBCategory = async (req, res) => {
       paymentVerified: true,
       isAdminApproved: true,
     }).select(
-      "_id name email phone businessCategory profilePic address businessName userstatus userAverageRating userRatings providerRatings providerAverageRating"
+      "_id name email phone businessCategory profilePic address businessName userstatus userAverageRating userRatings providerRatings providerAverageRating received_requests sended_requests"
     );
 
     console.log("Users count:", users.length);

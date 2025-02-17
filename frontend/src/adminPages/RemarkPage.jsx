@@ -1,131 +1,117 @@
-// import { useState } from "react";
-// import AdminSidebar from '../admincomponents/AdminSidebar';
-// import AdminHeader from '../admincomponents/AdminHeader';
-
-// const questionsList = [
-//   "Is the documentation complete?",
-//   "Are there any security concerns?",
-//   "Does the UI follow brand guidelines?",
-//   "Are all functionalities working as expected?",
-//   "Is the response time optimal?",
-//   "Are there any accessibility issues?",
-//   "Does it work across all browsers?",
-//   "Is the codebase maintainable?",
-//   "Are error messages clear and helpful?",
-//   "Is there any redundant code?",
-// ];
-
-// const RemarkPage = () => {
-//   const [checkedQuestions, setCheckedQuestions] = useState([]);
-
-//   const handleCheck = (question) => {
-//     setCheckedQuestions((prev) =>
-//       prev.includes(question)
-//         ? prev.filter((q) => q !== question)
-//         : [...prev, question]
-//     );
-//   };
-
-//   const sortedQuestions = [
-//     ...questionsList.filter((q) => !checkedQuestions.includes(q)),
-//     ...checkedQuestions,
-//   ];
-
-//   return (
-//     <div className="container-fluid mt-40">
-//       <AdminHeader />
-//       <div className="d-flex">
-//         <AdminSidebar />
-//         <div className="container mt-4 p-4 bg-white shadow rounded" style={{ maxWidth: "900px" }}>
-//           <h2 className="text-center mb-4">Review Checklist</h2>
-//           <ul className="list-group">
-//             {sortedQuestions.map((question, index) => (
-//               <li
-//                 key={index}
-//                 className={`list-group-item d-flex justify-content-between align-items-center ${checkedQuestions.includes(question) ? "bg-light text-muted" : ""}`}
-//               >
-//                 <span>{question}</span>
-//                 <input
-//                   type="checkbox"
-//                   checked={checkedQuestions.includes(question)}
-//                   onChange={() => handleCheck(question)}
-//                   className="form-check-input"
-//                 />
-//               </li>
-//             ))}
-//           </ul>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default RemarkPage;
-import React, { useContext, useEffect, useState } from "react";
+import { useState, useEffect, useContext } from "react";
 import axios from "axios";
-import AdminSidebar from '../admincomponents/AdminSidebar';
-import AdminHeader from '../admincomponents/AdminHeader';
-import { UserContext } from '../UserContext';
-
+import { UserContext } from "../UserContext.jsx";
+import AdminHeader from "../admincomponents/AdminHeader.jsx";
+import AdminSidebar from "../admincomponents/AdminSidebar.jsx";
+import { useLocation, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 const backend_API = import.meta.env.VITE_API_URL;
 
 const RemarkPage = () => {
-
   const { user } = useContext(UserContext);
-  const userId = user._id;
+  const navigate = useNavigate()
+  const location = useLocation();
+  const userId = location.state?.userId || user._id; // Use the user ID from state or context
   const [remarks, setRemarks] = useState([]);
-  const [questions, setQuestions] = useState([
-    { id: 1, text: "Have you completed all required documentation?", checked: false },
-    { id: 2, text: "Did you verify the client's identity?", checked: false },
-    { id: 3, text: "Is the payment information accurate?", checked: false },
-    { id: 4, text: "Have you reviewed the compliance checklist?", checked: false },
-    { id: 5, text: "Were all quality assurance checks performed?", checked: false },
-    { id: 6, text: "Has the supervisor approval been obtained?", checked: false },
-    { id: 7, text: "Did you confirm the delivery address?", checked: false },
-    { id: 8, text: "Were safety protocols followed during processing?", checked: false },
-    { id: 9, text: "Is the client's data properly secured?", checked: false },
-    { id: 10, text: "Have you logged the transaction in the system?", checked: false },
-  ]);
+  const [newRemark, setNewRemark] = useState("");
 
   useEffect(() => {
     fetchRemarks();
-  }, []);
+  }, [userId]);
 
   const fetchRemarks = async () => {
+    console.log(userId, 'uid')
     try {
       const response = await axios.get(`${backend_API}/remark/user/${userId}`);
+      console.log(response.data.remarks, 'data');
       if (response.status === 200) {
-        const backendRemarks = response.data.remarks;
-        setQuestions((prevQuestions) =>
-          prevQuestions.map((q) => {
-            const foundRemark = backendRemarks.find((r) => r.question === q.text);
-            return foundRemark ? { ...q, checked: foundRemark.checked } : q;
-          })
-        );
+        const remarksWithDefaultStatus = response?.data?.remarks?.map(remark => ({
+          ...remark,
+          // Ensure userStatus is always an array, even if it's a single object for the user
+          userStatus: Array.isArray(remark.userStatus)
+            ? remark.userStatus.map(status => ({
+              ...status,
+              is_completed: status?.is_completed || false, // Ensure is_completed is always false if undefined
+            }))
+            : [remark.userStatus], // Wrap userStatus object in an array if it's a single object
+        }));
+
+        setRemarks(remarksWithDefaultStatus);
       }
     } catch (error) {
       console.log("Error fetching remarks:", error);
     }
   };
 
-  const handleCheckboxChange = async (questionId) => {
-    const updatedQuestions = questions.map((q) =>
-      q.id === questionId ? { ...q, checked: !q.checked } : q
-    );
-    setQuestions(updatedQuestions);
-
+  const handleAddRemark = async () => {
     try {
-      await axios.post(`${backend_API}/save`, {
+      const response = await axios.post(`${backend_API}/remark/create`, {
         userId,
-        remarks: updatedQuestions.map((q) => ({ question: q.text, checked: q.checked })),
+        remark: newRemark,
       });
+      if (response.status === 200) {
+        const addedRemark = response.data.remarks;
+        // Process the remark to ensure correct structure
+        const processedRemark = {
+          ...addedRemark,
+          userStatus: addedRemark.userStatus.map(status => ({
+            ...status,
+            is_completed: status?.is_completed || false,
+          })),
+        };
+        // Add the new remark to the state immediately
+        setRemarks(prev => [...prev, processedRemark]);
+      }
+      fetchRemarks();
+      setNewRemark("");
     } catch (error) {
-      console.error("Error saving remarks:", error);
+      console.log("Error adding remark:", error);
     }
   };
 
-  const checkedCount = questions.filter((q) => q.checked).length;
-  const sortedQuestions = [...questions].sort((a, b) => a.checked - b.checked);
+  const handleUpdateStatus = async (remarkId, isCompleted) => {
+    console.log(remarkId, isCompleted, userId, "ss");
+    try {
+      const response = await axios.put(`${backend_API}/remark/update-status/${remarkId}`, {
+        is_completed: isCompleted,
+        userId: userId,
+      });
+      console.log(response, "res.update");
+      if (response.status === 200) {
+        setRemarks((prevRemarks) =>
+          prevRemarks.map((r) =>
+            r._id === remarkId
+              ? {
+                ...r,
+                userStatus: r.userStatus.map((status) =>
+                  status.userId.toString() === userId
+                    ? { ...status, is_completed: isCompleted }
+                    : status
+                ),
+              }
+              : r
+          )
+        );
+        toast.success("remark status updated!!");
+      }
+    } catch (error) {
+      console.error("Error updating remark status:", error);
+    }
+  };
+
+  const handleDeleteRemark = async (remarkId) => {
+    try {
+      const response = await axios.delete(`${backend_API}/remark/delete/${remarkId}`);
+      console.log(response, "response");
+      if (response.status === 200) {
+        toast("remark deleted successfully !!");
+      }
+      setRemarks((prevRemarks) => prevRemarks.filter((r) => r._id !== remarkId));
+    } catch (error) {
+      console.log("Error deleting remark:", error);
+      toast.error("server error deleting remark !!");
+    }
+  };
 
   return (
     <div className="container-fluid mt-40">
@@ -136,34 +122,56 @@ const RemarkPage = () => {
           <div className="container">
             <div className="d-flex justify-content-between align-items-center mb-4">
               <h2 className="text-dark mb-0">Remark Checklist</h2>
-              <div className="bg-dark text-white p-3 rounded">
-                <h5 className="mb-0">
-                  Completed: {checkedCount} / {questions.length}
-                </h5>
-              </div>
+              <button onClick={() => navigate(-1)} className="btn btn-dark btn-sm btn-primary">Back</button>
             </div>
 
+            {/* Add Remark Input */}
+            <div className="mb-3 d-flex">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Add a new remark..."
+                value={newRemark}
+                onChange={(e) => setNewRemark(e.target.value)}
+              />
+              <button className="btn btn-sm btn-primary ms-2" onClick={handleAddRemark}>
+                Add
+              </button>
+            </div>
+
+            {/* Remark List */}
             <div className="row g-4">
-              {sortedQuestions.map((question, index) => (
-                <div key={question.id} className="col-12">
-                  <div className={`card shadow-sm ${question.checked ? "bg-light" : ""}`}>
+              {remarks?.map((remark) => (
+                <div key={remark?._id} className="col-12">
+                  <div className={`card shadow-sm ${remark?.userStatus[0]?.is_completed ? "bg-light" : ""}`}>
                     <div className="card-body d-flex justify-content-between align-items-center">
                       <div className="form-check">
                         <input
                           type="checkbox"
                           className="form-check-input"
-                          id={`question-${question.id}`}
-                          checked={question.checked}
-                          onChange={() => handleCheckboxChange(question.id)}
+                          id={`remark-${remark?._id}`}
+                          checked={remark?.userStatus[0]?.is_completed}
+                          onChange={() =>
+                            handleUpdateStatus(remark._id, !remark?.userStatus[0]?.is_completed)
+                          }
                           style={{ width: "1.2em", height: "1.2em" }}
                         />
                       </div>
-                      <span className={`flex-grow-1 mx-3 ${question.checked ? "text-muted" : ""}`}>
-                        {question.text}
+                      <span className={`flex-grow-1 mx-3 ${remark?.userStatus[0]?.is_completed ? "text-muted" : ""}`}>
+                        {remark.remark}
                       </span>
-                      <span className={`badge ${question.checked ? "bg-success" : "bg-secondary"}`}>
-                        {question.checked ? "Completed" : "Pending"}
+                      <span
+                        className={`badge ${remark?.userStatus[0]?.is_completed ? "bg-success" : "bg-secondary"}`}
+                      >
+                        {remark?.userStatus[0]?.is_completed ? "Completed" : "Pending"}
                       </span>
+                      <button
+                        className="btn btn-sm btn-danger ms-3"
+                        onClick={() => handleDeleteRemark(remark._id)}
+                      >
+                        delete
+                        {/* ❌ */}
+                      </button>
                     </div>
                   </div>
                 </div>
