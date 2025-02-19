@@ -57,11 +57,14 @@ const Work = () => {
       console.log(response.data, "response.data");
       if (response.status === 200 && response.data) {
         if (requestType === "Sended Request") {
-          setSendedRequest(response.data.sendedRequests || []);
+          const sortedRequests = response.data.sendedRequests.sort((a, b) => {
+            const priority = { pending: 1, accepted: 2, completed: 3, rated: 4, rejected: 5 };
+            return (priority[a.status] || 99) - (priority[b.status] || 99);
+          });
 
+          setSendedRequest(sortedRequests);
         } else {
           setReceivedRequest(response.data.receivedRequests || []);
-          console.log(response.data.receivedRequests, "response.data.receivedRequests");
         }
       } else {
         toast.error(response?.data?.message || "Error fetching requests");

@@ -244,7 +244,6 @@ const userSchema = new mongoose.Schema(
     resetCodeExpires: { type: Number },
     paymentVerified: { type: Boolean, default: false }, // New field added
     paymentExpiry: { type: Date, default: null },
-    oneSignalPlayerId: { type: String, default: null },
   },
 
   { timestamps: true }

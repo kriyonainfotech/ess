@@ -10,6 +10,7 @@ const {
   updateRequestStatus,
   getUsersWithRequestsCounts,
   updateRequestStatusMobile,
+  getUserRequests,
 } = require("../controllers/requestController");
 const { verifyToken } = require("../middleware/auth");
 const userModel = require("../model/user");
@@ -22,6 +23,8 @@ const { fixUserData } = require("../controllers/AuthController2");
 const router = express.Router();
 router.post("/sentRequest", verifyToken, sentRequest);
 router.post("/sentRequestMobile", sentRequestMobile);
+
+router.get("/getUserRequests", verifyToken, getUserRequests);
 
 router.get("/getSentRequests", verifyToken, getSentRequests);
 router.get("/getReceivedRequests", verifyToken, getReceivedRequests);

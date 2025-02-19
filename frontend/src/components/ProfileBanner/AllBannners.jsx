@@ -43,41 +43,41 @@ const AllBanners = () => {
     const deleteBanner = async (bannerId) => {
         toast.info(
             <div>
-              <p>Are you sure you want to delete this Banner?</p>
-              <div className="d-flex justify-content-center gap-2">
-                <button className="btn btn-danger btn-sm" onClick={() => confirmDelete(bannerId)}>Yes</button>
-                <button className="btn btn-secondary btn-sm" onClick={toast.dismiss}>No</button>
-              </div>
+                <p>Are you sure you want to delete this Banner?</p>
+                <div className="d-flex justify-content-center gap-2">
+                    <button className="btn btn-danger btn-sm" onClick={() => confirmDelete(bannerId)}>Yes</button>
+                    <button className="btn btn-secondary btn-sm" onClick={toast.dismiss}>No</button>
+                </div>
             </div>,
-             { autoClose: true, closeOnClick: true }
-          );
-        };
-        
-        const confirmDelete = async(bannerId) => {
-            toast.dismiss(); // Close the confirmation toast
-          
-            
-            try {
-                const response = await axios.delete(`${backend_API}/banner/deleteBanner`, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                    },
-                    data: { bannerId }, // Pass bannerId in request body
-                });
-    
-                if (response.status === 200) {
-                    console.log("Banner deleted successfully");
-                    getUserBanners(); // Refresh the list of banners after deletion
-                }
-            } catch (error) {
-                setError('Error deleting banner. Please try again later.');
-                console.error("Error deleting banner:", error);
-            } finally {
-                setLoading(false);
+            { autoClose: true, closeOnClick: true }
+        );
+    };
+
+    const confirmDelete = async (bannerId) => {
+        toast.dismiss(); // Close the confirmation toast
+
+
+        try {
+            const response = await axios.delete(`${backend_API}/banner/deleteBanner`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                data: { bannerId }, // Pass bannerId in request body
+            });
+
+            if (response.status === 200) {
+                console.log("Banner deleted successfully");
+                getUserBanners(); // Refresh the list of banners after deletion
             }
-        
-      
+        } catch (error) {
+            setError('Error deleting banner. Please try again later.');
+            console.error("Error deleting banner:", error);
+        } finally {
+            setLoading(false);
+        }
+
+
     };
 
     // Fetch banners on component mount
@@ -107,7 +107,7 @@ const AllBanners = () => {
                                         </div>
                                         <div className="banner-Btn">
                                             <button
-                                                className="btn bg-orange text-white fs-4 p-0 p-1"
+                                                className="btn bg-orange text-white fs-4 p-2"
                                                 onClick={() => deleteBanner(banner._id)}
                                                 disabled={loading}
                                             >
@@ -116,7 +116,7 @@ const AllBanners = () => {
                                                         <span className="sr-only">Loading...</span>
                                                     </div> : <MdOutlineDeleteOutline />}
 
-                                                
+
                                             </button>
                                         </div>
                                     </div>

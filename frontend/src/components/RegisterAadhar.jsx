@@ -193,7 +193,7 @@ const RegisterAadhar = () => {
                     <div className="sm:m-10 bg-white w-full shadow sm:rounded-lg flex justify-center flex-1">
                         <div className="lg:w-1/2 xl:w-6/12 p-6 sm:p-12">
                             <div className="flex flex-col items-center">
-                                <div className="w-full flex-1 mt-8">
+                                <div className="w-full flex-1">
                                     <div className="flex flex-col items-center">
                                         <div>
                                             <img src={logo} width={100} alt="Logo" />
@@ -204,7 +204,7 @@ const RegisterAadhar = () => {
                                     </div>
                                     <form onSubmit={handleSubmit}>
                                         <div className="mx-auto max-w-full">
-                                            <h4 className='pt-3 ps-2 py-3'>Aadhaar KYC</h4>
+                                            <h4 className='py-4 text-center'>Aadhaar KYC</h4>
                                             <div className="d-flex " style={{ position: "relative" }}>
                                                 <div className="col-6 p-1">
                                                     <div className="">
@@ -223,7 +223,7 @@ const RegisterAadhar = () => {
                                                             onChange={(e) => handleImageChange(e, setFrontAadhar, setFrontAadharPreview)}
                                                             hidden
                                                         />
-                                                        <button type="button" className="btn d-none d-md-flex bg-green text-white position-absolute  p-2 rounded-5 top-[63%]" onClick={() => toggleWebcam("frontAadhar")}>
+                                                        <button type="button" className="btn d-none d-md-flex bg-green text-white position-absolute  p-2 rounded-5 bottom-[-5%] left-[3%]" onClick={() => toggleWebcam("frontAadhar")}>
                                                             <FiCamera />
                                                         </button>
                                                         <div className='d-flex d-md-none'>
@@ -265,7 +265,7 @@ const RegisterAadhar = () => {
 
                                                             hidden
                                                         />
-                                                        <button type="button" className="btn d-none d-md-flex bg-green text-white position-absolute p-2 rounded-5 top-[63%]" onClick={() => toggleWebcam("backAadhar")}>
+                                                        <button type="button" className="btn d-none d-md-flex bg-green text-white position-absolute p-2 rounded-5 bottom-[-9%] left-[5%]" onClick={() => toggleWebcam("backAadhar")}>
                                                             <FiCamera />
                                                         </button>
                                                         <div className='d-flex d-md-none'>
@@ -331,52 +331,7 @@ const RegisterAadhar = () => {
                                                     </div>
                                                 </div>
                                             </div>
-                                            {/* <div className='p-1' style={{ position: "relative" }}>
-                                                <h4>Upload Selfie</h4>
-                                                <label
-                                                    className="rounded-md m-3 cursor-pointer overflow-hidden"
-                                                    style={{ width: "150px", height: "150px", objectFit: "cover", objectPosition: "center" }}
-                                                >
-                                                    <img
-                                                        src={profilePicPreview || ProfileIcon}
-                                                        alt="Profile"
-                                                        className="rounded-md img-flied w-100"
-                                                    />
-                                                </label>
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    capture="camera"
-                                                    id="cameraInput"
-                                                    onChange={handleProfilePictureChange}
-                                                    className="hidden"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={toggleWebcam}
-                                                    className="position-absolute top-12 start-0 p-2 bg-green text-white rounded-full"
-                                                >
-                                                    <FiCamera />
-                                                </button>
-                                                {isWebcamOpen && (
-                                                    <div className="webcam-overlay">
-                                                        <div className="webcam-popup">
-                                                            <Webcam
-                                                                audio={false}
-                                                                ref={webcamRef}
-                                                                screenshotFormat="image/jpeg"
-                                                                className="webcam"
-                                                            />
-                                                            <button type="button" onClick={captureWebcamImage} className="btn btn-primary mt-2">
-                                                                Capture
-                                                            </button>
-                                                            <button type="button" onClick={toggleWebcam} className="btn btn-secondary mt-2">
-                                                                Close
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div> */}
+
                                             <div>
 
                                                 {isWebcamOpen && (
@@ -397,25 +352,27 @@ const RegisterAadhar = () => {
                                                         </div>
                                                     </div>
                                                 )}
-                                                <div className="flex flex-wrap items-center justify-between">
-                                                    <div className="w-full sm:w-auto">
+                                                <div className="flex flex-wrap justify-center">
+                                                    <div className="w-full sm:w-auto flex flex-col items-center">
                                                         <button
                                                             type="submit"
-                                                            className="flex items-center justify-center w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white px-5 py-2.5 rounded-lg shadow-sm hover:shadow-lg font-medium transition ease-in duration-200"
+                                                            className="flex items-center justify-center w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-lg shadow-sm hover:shadow-lg font-medium transition ease-in duration-200"
                                                             disabled={loading}
                                                         >
-                                                            {loading ?
+                                                            {loading ? (
                                                                 <div className="spinner-border text-white" role="status">
                                                                     <span className="sr-only">Loading...</span>
-                                                                </div> : 'Sign Up'}
-
-
+                                                                </div>
+                                                            ) : (
+                                                                'Sign Up'
+                                                            )}
                                                         </button>
-                                                        <p className="mt-4 text-sm text-center text-gray-600">
-                                                            Already have an account? <Link to={'/login'} className="text-success text-bold hover:underline">login</Link>
+                                                        <p className="mt-4 text-sm text-gray-600">
+                                                            Already have an account? <Link to={'/login'} className="text-success font-semibold hover:underline text-lg ml-1">login</Link>
                                                         </p>
                                                     </div>
                                                 </div>
+
                                             </div>
                                         </div>
                                     </form>

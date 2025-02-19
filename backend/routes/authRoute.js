@@ -34,6 +34,8 @@ const {
   updateUserAddressAndAadhar,
   setReferral,
   deleteAdharPics,
+  getUserAadhaarDetails,
+  updateProfilePic,
 } = require("../controllers/AuthController2");
 const router = express.Router();
 
@@ -88,8 +90,33 @@ router.put("/approveUser", approveUser);
 router.post(
   "/updateProfile",
   verifyToken,
-  upload.single("profilePic"),
-  updateProfile
+  upload.fields([
+    { name: "profilePic", maxCount: 1 }, // Profile picture
+    { name: "frontAadhar", maxCount: 1 }, // Aadhar front image
+    { name: "backAadhar", maxCount: 1 }, // Aadhar back image
+  ]),
+  (req, res, next) => {
+    console.log(req.files); // Check if file is received
+    console.log(req.file); // Check other form fields
+    try {
+      // Attach the file paths to the request body if files are uploaded
+      if (req.files) {
+        req.body.profilePic = req.files.profilePic
+          ? req.files.profilePic[0].path
+          : null;
+        req.body.frontAadhar = req.files.frontAadhar
+          ? req.files.frontAadhar[0].path
+          : null;
+        req.body.backAadhar = req.files.backAadhar
+          ? req.files.backAadhar[0].path
+          : null;
+      }
+
+      updateProfile(req, res, next); // Proceed with the profile update logic
+    } catch (error) {
+      next(error); // Pass the error to the error handler
+    }
+  }
 );
 
 router.post("/updateProfileMobile", updateProfileMobile);
@@ -106,7 +133,7 @@ router.put("/setUserStatusMobile", setUserStatusMobile);
 router.put("/updateRoleByEmail", updateRoleByEmail);
 router.post("/getUsersByBCategory", getUsersByBCategory);
 
-router.delete("/delete-aadhar", deleteAdharPics);
+router.get("/delete-aadhar", getUserAadhaarDetails);
 
 // forgotpassword and reset password apis
 router.post("/forgot-password", forgotPassword);
@@ -116,42 +143,6 @@ router.post("/setReferral", setReferral);
 
 // Route to update permanent address and Aadhar number
 router.put("/updateUserAddressAndAadhar", updateUserAddressAndAadhar);
-
-const DEFAULT_PROFILE_PIC =
-  "https://res.cloudinary.com/dcfm0aowt/image/upload/v1739604108/user/phnbhd4onynoetzdxqjp.jpg";
-
-// Get all users' profile picture URLs
-router.get("/profile-pics", async (req, res) => {
-  try {
-    const users = await User.find({}, "profilePic"); // Fetch only profilePic field
-    const updatedUsers = await Promise.all(
-      users.map(async (user) => {
-        if (
-          user.profilePic?.includes(
-            "https://res.cloudinary.com/dosudib3y/image/"
-          )
-        ) {
-          // Update in MongoDB
-          await User.findByIdAndUpdate(user._id, {
-            profilePic: DEFAULT_PROFILE_PIC,
-          });
-
-          return {
-            userId: user._id,
-            profilePic: DEFAULT_PROFILE_PIC, // Replaced URL
-          };
-        }
-        return {
-          userId: user._id,
-          profilePic: user.profilePic || null, // Original URL or null
-        };
-      })
-    );
-
-    res.json({ success: true, data: updatedUsers });
-  } catch (error) {
-    res.status(500).json({ success: false, message: "Server Error" });
-  }
-});
+router.put("/update-profile-pic", updateProfilePic);
 
 module.exports = router;

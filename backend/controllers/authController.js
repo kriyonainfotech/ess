@@ -6,6 +6,14 @@ const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const { v4: uuidv4 } = require("uuid");
 const {
+  validateFiles,
+  parseAddress,
+  checkExistingUser,
+  findReferrer,
+  notifyReferrer,
+  notifyAdmins,
+} = require("../services/authService");
+const {
   distributeReferralRewards,
 } = require("../controllers/paymentController");
 const { sendNotification } = require("./sendController");
@@ -298,37 +306,224 @@ const loginUser = async (req, res) => {
   }
 };
 
+// const registerUserweb = async (req, res) => {
+//   try {
+//     // 1. Validate file uploads
+//     console.log("[INFO] 🟢 Starting user registration process...");
+//     const { files } = req;
+//     if (
+//       !files?.frontAadhar?.[0] ||
+//       !files?.backAadhar?.[0] ||
+//       !files?.profilePic?.[0]
+//     ) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Please upload all required files" });
+//     }
+
+//     // 2. File size validation
+//     console.log("[INFO] 📏 Validating file sizes...");
+//     const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+//     if (
+//       files.frontAadhar[0].size > MAX_FILE_SIZE ||
+//       files.backAadhar[0].size > MAX_FILE_SIZE ||
+//       files.profilePic[0].size > MAX_FILE_SIZE
+//     ) {
+//       console.warn("[WARN] ⚠️ File size exceeds the limit");
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Each file must be less than 2MB" });
+//     }
+
+//     // 3. Extract form data
+
+//     const {
+//       name,
+//       email,
+//       password,
+//       phone,
+//       address,
+//       businessCategory,
+//       businessName,
+//       businessAddress,
+//       businessDetaile,
+//       fcmToken,
+//       referralCode,
+//     } = req.body;
+//     console.log("[INFO] 📝 Extracting form data...", req.body);
+
+//     if (!name || !email || !password || !phone || !address) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Missing required fields" });
+//     }
+
+//     // 4. Parse address
+//     console.log("[INFO] 🗺️ Parsing address...");
+//     let parsedAddress;
+//     try {
+//       parsedAddress =
+//         typeof address === "string" ? JSON.parse(address) : address;
+//     } catch (err) {
+//       console.error("[ERROR] ❌ Invalid address format:", err.message);
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Invalid address format" });
+//     }
+
+//     // 5. Check for existing user and referrer
+//     console.log("[INFO] 🔎 Checking existing user and referrer...");
+//     const hashedPassword = await bcrypt.hash(password, 10);
+//     const existingUser = await UserModel.findOne({
+//       $or: [{ email }, { phone }],
+//     });
+//     if (existingUser) {
+//       console.warn("[WARN] ⚠️ User already exists:", existingUser);
+//       return res.status(400).json({
+//         success: false,
+//         message:
+//           existingUser.email === email
+//             ? "Email already exists"
+//             : "Phone number already exists",
+//       });
+//     }
+
+//     // Find referrer based on referralCode (which is a user ID)
+//     let referrer = null;
+//     if (referralCode) {
+//       console.log(referralCode, "rc0");
+//       if (/^\d{10}$/.test(referralCode)) {
+//         console.log(referralCode, "rc");
+//         // If referralCode is a 10-digit phone number
+//         referrer = await UserModel.findOne({ phone: referralCode }).select(
+//           "_id"
+//         );
+//       } else if (/^[a-fA-F0-9]{24}$/.test(referralCode)) {
+//         console.log(referralCode, "rc");
+//         // If referralCode is a 16-character user ID
+//         referrer = await UserModel.findById(referralCode).select("_id");
+//       }
+
+//       if (!referrer) {
+//         console.warn("[WARN] ⚠️ Invalid referral code provided.");
+//         return res.status(400).json({
+//           success: false,
+//           message: "Invalid referral code",
+//         });
+//       }
+//     }
+
+//     const uniqueId = await generateUniqueId();
+
+//     // 6. Create new user
+//     console.log("[INFO] 🆕 Creating new user...");
+//     const user = new UserModel({
+//       userId: uniqueId,
+//       name,
+//       email,
+//       password: hashedPassword,
+//       phone,
+//       address: parsedAddress,
+//       businessCategory,
+//       businessName,
+//       businessAddress,
+//       businessDetaile,
+//       fcmToken,
+//       referralCode,
+//       referredBy: referrer ? [referrer._id] : [],
+//       isAdminApproved: false,
+//       walletBalance: 0,
+//       earningsHistory: [],
+//       frontAadhar: files.frontAadhar[0].path,
+//       backAadhar: files.backAadhar[0].path,
+//       profilePic: files.profilePic[0].path,
+//     });
+
+//     // 7. Save user and update referrer if applicable
+//     user.referralCode = user._id;
+//     await user.save();
+//     console.log("[SUCCESS] ✅ User registration completed!", user);
+
+//     // Update referrer's referral list
+//     if (referrer) {
+//       await UserModel.findByIdAndUpdate(referrer._id, {
+//         $push: { referrals: user._id },
+//       });
+//       console.log(`[INFO] 🔗 User added to ${referrer._id}'s referral list`);
+
+//       // **Send Notification to Referrer**
+//       if (referrer.fcmToken) {
+//         await sendNotification({
+//           senderName: "System",
+//           fcmToken: referrer.fcmToken,
+//           title: "New Referral Registered 🎉",
+//           message: `${name} has registered using your referral code!`,
+//           receiverId: referrer._id,
+//         });
+//         console.log("[INFO] 📩 Notification sent to referrer!");
+//       }
+//     }
+
+//     // ✅ **Notify All Admins**
+//     console.log("[INFO] 🔎 Fetching all admins...");
+//     const admins = await UserModel.find({ role: "admin" }).select(
+//       "_id fcmToken"
+//     );
+
+//     if (admins.length > 0) {
+//       const adminNotifications = admins
+//         .filter((admin) => admin.fcmToken)
+//         .map((admin) =>
+//           sendNotification({
+//             senderName: "System",
+//             fcmToken: admin.fcmToken,
+//             title: "New User Registered 🆕",
+//             message: `A new user, ${name}, has registered on the platform.`,
+//             receiverId: admin._id,
+//           })
+//         );
+
+//       await Promise.all(adminNotifications);
+//       console.log(`[INFO] 📩 Notifications sent to ${admins.length} admins!`);
+//     }
+
+//     // 9. Generate token
+//     const token = jwt.sign(
+//       { id: user._id, isAdminApproved: false },
+//       process.env.JWT_SECRET,
+//       { expiresIn: "24h" }
+//     );
+//     console.log("[INFO] 🔐 Generating authentication token...");
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Registration successful! Awaiting admin approval.",
+//       user: {
+//         id: user._id,
+//         name: user.name,
+//         email: user.email,
+//         referralCode: user.referralCode,
+//       },
+//       token,
+//     });
+//   } catch (error) {
+//     console.error("[ERROR] ❌ Registration failed:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Registration failed. Please try again.",
+//       error: error.message,
+//     });
+//   }
+// };
+
 const registerUserweb = async (req, res) => {
   try {
-    // 1. Validate file uploads
     console.log("[INFO] 🟢 Starting user registration process...");
-    const { files } = req;
-    if (
-      !files?.frontAadhar?.[0] ||
-      !files?.backAadhar?.[0] ||
-      !files?.profilePic?.[0]
-    ) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Please upload all required files" });
-    }
 
-    // 2. File size validation
-    console.log("[INFO] 📏 Validating file sizes...");
-    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
-    if (
-      files.frontAadhar[0].size > MAX_FILE_SIZE ||
-      files.backAadhar[0].size > MAX_FILE_SIZE ||
-      files.profilePic[0].size > MAX_FILE_SIZE
-    ) {
-      console.warn("[WARN] ⚠️ File size exceeds the limit");
-      return res
-        .status(400)
-        .json({ success: false, message: "Each file must be less than 2MB" });
-    }
+    // 1️⃣ Validate files
+    validateFiles(req.files);
 
-    // 3. Extract form data
-
+    // 2️⃣ Extract form data
     const {
       name,
       email,
@@ -342,7 +537,6 @@ const registerUserweb = async (req, res) => {
       fcmToken,
       referralCode,
     } = req.body;
-    console.log("[INFO] 📝 Extracting form data...", req.body);
 
     if (!name || !email || !password || !phone || !address) {
       return res
@@ -350,65 +544,19 @@ const registerUserweb = async (req, res) => {
         .json({ success: false, message: "Missing required fields" });
     }
 
-    // 4. Parse address
-    console.log("[INFO] 🗺️ Parsing address...");
-    let parsedAddress;
-    try {
-      parsedAddress =
-        typeof address === "string" ? JSON.parse(address) : address;
-    } catch (err) {
-      console.error("[ERROR] ❌ Invalid address format:", err.message);
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid address format" });
-    }
+    // 3️⃣ Parse address
+    const parsedAddress = parseAddress(address);
 
-    // 5. Check for existing user and referrer
-    console.log("[INFO] 🔎 Checking existing user and referrer...");
+    // 4️⃣ Check existing user
+    await checkExistingUser(email, phone);
+
+    // 5️⃣ Find referrer
+    const referrer = await findReferrer(referralCode);
+
+    // 6️⃣ Hash password & create user
     const hashedPassword = await bcrypt.hash(password, 10);
-    const existingUser = await UserModel.findOne({
-      $or: [{ email }, { phone }],
-    });
-    if (existingUser) {
-      console.warn("[WARN] ⚠️ User already exists:", existingUser);
-      return res.status(400).json({
-        success: false,
-        message:
-          existingUser.email === email
-            ? "Email already exists"
-            : "Phone number already exists",
-      });
-    }
-
-    // Find referrer based on referralCode (which is a user ID)
-    let referrer = null;
-    if (referralCode) {
-      console.log(referralCode, "rc0");
-      if (/^\d{10}$/.test(referralCode)) {
-        console.log(referralCode, "rc");
-        // If referralCode is a 10-digit phone number
-        referrer = await UserModel.findOne({ phone: referralCode }).select(
-          "_id"
-        );
-      } else if (/^[a-fA-F0-9]{24}$/.test(referralCode)) {
-        console.log(referralCode, "rc");
-        // If referralCode is a 16-character user ID
-        referrer = await UserModel.findById(referralCode).select("_id");
-      }
-
-      if (!referrer) {
-        console.warn("[WARN] ⚠️ Invalid referral code provided.");
-        return res.status(400).json({
-          success: false,
-          message: "Invalid referral code",
-        });
-      }
-    }
-
     const uniqueId = await generateUniqueId();
 
-    // 6. Create new user
-    console.log("[INFO] 🆕 Creating new user...");
     const user = new UserModel({
       userId: uniqueId,
       name,
@@ -426,31 +574,28 @@ const registerUserweb = async (req, res) => {
       isAdminApproved: false,
       walletBalance: 0,
       earningsHistory: [],
-      frontAadhar: files.frontAadhar[0].path,
-      backAadhar: files.backAadhar[0].path,
-      profilePic: files.profilePic[0].path,
+      frontAadhar: req.files.frontAadhar[0].path,
+      backAadhar: req.files.backAadhar[0].path,
+      profilePic: req.files.profilePic[0].path,
     });
 
-    // 7. Save user and update referrer if applicable
+    // Save user and update referrer
     user.referralCode = user._id;
     await user.save();
     console.log("[SUCCESS] ✅ User registration completed!", user);
 
-    // Update referrer's referral list
-    if (referrer) {
-      await UserModel.findByIdAndUpdate(referrer._id, {
-        $push: { referrals: user._id },
-      });
-      console.log(`[INFO] 🔗 User added to ${referrer._id}'s referral list`);
-    }
+    // 7️⃣ Notify Referrer
+    await notifyReferrer(referrer, name);
 
-    // 9. Generate token
+    // 8️⃣ Notify All Admins
+    await notifyAdmins(name);
+
+    // 9️⃣ Generate authentication token
     const token = jwt.sign(
       { id: user._id, isAdminApproved: false },
       process.env.JWT_SECRET,
       { expiresIn: "24h" }
     );
-    console.log("[INFO] 🔐 Generating authentication token...");
 
     return res.status(200).json({
       success: true,
@@ -465,11 +610,7 @@ const registerUserweb = async (req, res) => {
     });
   } catch (error) {
     console.error("[ERROR] ❌ Registration failed:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Registration failed. Please try again.",
-      error: error.message,
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -767,14 +908,28 @@ const logout = async (req, res) => {
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user.id; // Assumes you have middleware setting req.user
-    const profilePic = req.file ? req.file.path : null;
+    console.log(
+      req.files,
+      req.file,
+      req.body,
+      "jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj"
+    );
+    // Get file paths for the uploaded files
+    const profilePic = req.files?.profilePic
+      ? req.files.profilePic[0].path
+      : null;
+    const frontAadhar = req.files?.frontAadhar
+      ? req.files.frontAadhar[0].path
+      : null;
+    const backAadhar = req.files?.backAadhar
+      ? req.files.backAadhar[0].path
+      : null;
 
     console.log(
-      req.file,
-      "Uploaded File:",
-      req.body,
+      "Uploaded Files:",
+      { profilePic, frontAadhar, backAadhar },
       "Request Body:",
-      profilePic
+      req.body
     );
 
     // Extract fields from the request body
@@ -811,6 +966,8 @@ const updateProfile = async (req, res) => {
       }
     }
     if (profilePic) updatedFields.profilePic = profilePic;
+    if (frontAadhar) updatedFields.frontAadhar = frontAadhar;
+    if (backAadhar) updatedFields.backAadhar = backAadhar;
     if (businessCategory) updatedFields.businessCategory = businessCategory;
     if (businessName) updatedFields.businessName = businessName;
     if (businessAddress) updatedFields.businessAddress = businessAddress;
@@ -823,7 +980,7 @@ const updateProfile = async (req, res) => {
       { $set: updatedFields },
       { new: true, runValidators: true } // Validate fields before updating
     );
-
+    console.log(updatedUser, "updatedUser");
     if (!updatedUser) {
       return res.status(404).json({
         success: false,
@@ -912,6 +1069,7 @@ const updateProfileMobile = async (req, res) => {
       { $set: updatedFields },
       { new: true, runValidators: true } // Validate fields before updating
     );
+    console.log(updatedUser, "update user mobile");
 
     if (!updatedUser) {
       return res.status(404).json({
@@ -926,7 +1084,7 @@ const updateProfileMobile = async (req, res) => {
       user: updatedUser,
     });
   } catch (error) {
-    console.error(error);
+    console.log(error);
     return res.status(500).json({
       success: false,
       message: "An error occurred while updating the profile",

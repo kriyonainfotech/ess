@@ -9,46 +9,46 @@ const backend_API = import.meta.env.VITE_API_URL;
 
 const Reffrale = () => {
   const { user } = useContext(UserContext);
-  const [referrals, setReferrals] = useState([]);
+  const [referredby, setreferredby] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchReferrals = async () => {
+    const fetchreferredby = async () => {
       if (!user?._id) return;
       setLoading(true)
       try {
         const response = await axios.get(`${backend_API}/referal/getReferredBy/${user._id}`);
         if (response.status === 200) {
-          setReferrals(response.data.referredBy);
+          setreferredby(response.data.referredBy);
           console.log(response.data, "referdby");
         } else {
-          setError("Failed to fetch referrals");
+          setError("Failed to fetch referredby");
         }
       } catch (err) {
-        console.error("Error fetching referrals:", err);
+        console.error("Error fetching referredby:", err);
         setError(err.response?.data?.message || "Something went wrong");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchReferrals();
+    fetchreferredby();
   }, [user?._id]);
 
-  if (loading) return <p>Loading referrals...</p>;
+  if (loading) return <p>Loading referredby...</p>;
   if (error) return <p>Error: {error}</p>;
 
   return (
-    <div className="text-start">
-      <h4 className="py-2">ReferredBy</h4>
+    <div className="text-start mt-4">
+      <p className="text-lg lg:text-2xl font-semibold pb-2">ReferredBy</p>
       <div className="col-md-12">
         <div>
 
-          <Link to={`tel:${referrals.phone}`} className="list-group">
-            {referrals.length > 0 ? (
-              referrals.map((referral, index) => (
+          <Link className="list-group">
+            {referredby.length > 0 ? (
+              referredby.map((referral, index) => (
                 <div className="alert alert-primary" key={index}>
                   <h5>{referral.name}</h5>
                   <p><Link>
@@ -58,7 +58,7 @@ const Reffrale = () => {
                 </div>
               ))
             ) : (
-              <div className="alert alert-primary">No referrals found.</div>
+              <div className="alert alert-primary">No Referrer found.</div>
             )}
           </Link>
 

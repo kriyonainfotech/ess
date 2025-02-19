@@ -22,30 +22,22 @@ const sendNotification = async ({
       },
       token: fcmToken,
     };
-    // console.log(notificationPayload,"notificationPayload");
 
-    // Find the receiver user and store the notification in their profile
-    const receiver = await User.findById(receiverId);
-    if (!receiver) {
-      console.log("Receiver not found");
-      return { success: false, error: "Receiver not found." };
-    }
-
-    // Store the notification in the receiver's notifications array
-    receiver.notifications.push({
-      senderName,
-      title,
-      message,
-      timestamp: new Date(), // Ensure timestamp is set
-    });
-    await receiver.save();
-
-    console.log(
-      "Notification sent and saved successfully for receiver:",
-      receiverId
+    // Store notification directly in receiver's notifications array without fetching full document
+    await User.updateOne(
+      { _id: receiverId },
+      {
+        $push: {
+          notifications: { senderName, title, message, timestamp: new Date() },
+        },
+      }
     );
-    // Send the notification using FCM
+
+    console.log(`Notification saved successfully for receiver: ${receiverId}`);
+
+    // Send the notification using Firebase Cloud Messaging (FCM)
     const response = await admin.messaging().send(notificationPayload);
+    console.log("FCM notification sent:", response);
 
     return { success: true, response };
   } catch (error) {
@@ -57,9 +49,9 @@ const sendNotification = async ({
 const getNotifications = async (req, res) => {
   try {
     const userId = req.user.id; // Assume authentication middleware sets `req.user`
-    // console.log(userId ,"userId");
+    console.log(userId, "userId");
 
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).select("notifications");
 
     if (!user) {
       return res.status(404).json({

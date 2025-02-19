@@ -202,7 +202,7 @@ const OfferModal = ({ BannerUser, offerImage, closeModal, allBanners, initialBan
                       className="form-control w-100 mb-3"
                       placeholder="Enter your service request details..."
                       required
-                    />
+                    >I Need Your Service !</textarea>
                     <div className="text-right">
                       <button type="button" className="btn btn-secondary me-2" onClick={handleClosePopup}>
                         Cancel

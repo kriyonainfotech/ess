@@ -40,6 +40,7 @@ const Home = () => {
   const [showModal, setShowModal] = useState(user?.paymentVerified === false);
   const [showProfileUpdateModal, setShowProfileUpdateModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showAadharUpdateModal, setShowAadharUpdateModal] = useState(false);
 
   // useEffect(() => {
   //   const ONE_SIGNAL_APP_ID = "810605bf-f0d6-4214-b944-14307d1a5240";
@@ -184,6 +185,14 @@ const Home = () => {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (user?.frontAadhar === DEFAULT_PROFILE_PIC || user?.backAadhar === DEFAULT_PROFILE_PIC) {
+      setShowAadharUpdateModal(true);
+    } else {
+      setShowAadharUpdateModal(false);
+    }
+  }, [user]);
+
   return (
     <>
       <AdminNavbar />
@@ -193,9 +202,9 @@ const Home = () => {
       {/* Payment Verification Modal */}
       {showModal && (
         <div className="modals">
-          <div className="modal-contents">
-            <h5>Payment Verification</h5>
-            <p>Your payment is not verified. Please complete the verification.</p>
+          <div className="modal-contents text-center">
+            <h5 className='py-3'>Payment Verification</h5>
+            <p className='pb-3'>Your payment is not verified. Please complete the verification.</p>
             <button className="btn bg-green text-white" onClick={() => handlePaymentVerify(user._id)} disabled={loading}>
               {loading ? "Verifying..." : "Verify Payment"}
             </button>
@@ -207,15 +216,41 @@ const Home = () => {
       {/* Profile Picture Update Modal */}
       {showProfileUpdateModal && (
         <div className="modals">
+          <div className="modal-contents text-left">
+            <h5 className='pb-4 text-center'>Update Profile Picture</h5>
+            <p className='py-2'>
+              <span style={{ fontWeight: 'bold' }}>Step 1:</span> Go to your <strong>Profile Page</strong> and click the <strong>Edit Profile</strong> button at end of Profile page.
+            </p>
+            <p className='py-3'>
+              <span style={{ fontWeight: 'bold' }}>Step 2:</span> Select a new image by clicking on the profile picture, choose the image you want to upload, and click <strong>Save</strong> to update your profile picture.
+            </p>
+            <p>
+              <em>Note:</em> You can only change your profile picture if the current one is the <span style={{ color: 'gray' }}>default</span> image.
+            </p>
+
+            <div className="text-center">
+              <button className="btn bg-blue text-white mt-3" onClick={handleProfileUpdate}>
+                Update Now
+              </button>
+            </div>
+          </div>
+        </div>
+
+      )}
+
+      {/* Aadhaar Update Modal */}
+      {showAadharUpdateModal && (
+        <div className="modals">
           <div className="modal-contents">
-            <h5>Update Profile Picture</h5>
-            <p>Please update your profile picture to continue.</p>
-            <button className="btn bg-blue text-white" onClick={handleProfileUpdate}>
-              Update Now
+            <h5>Update Aadhaar Photos</h5>
+            <p className='pt-3'>Please upload your Aadhaar front and back photos to continue. To upload adhaar Click on Edit Profile button on Profile Page</p>
+            <button className="btn bg-blue text-white mt-3" onClick={() => navigate("/profile")}>
+              Upload Now
             </button>
           </div>
         </div>
       )}
+
 
       <div className='my-28'>
         {auth && <Card />}

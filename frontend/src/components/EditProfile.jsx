@@ -32,6 +32,12 @@ const EditProfile = () => {
   const [businessDetaile, setBusinessDetaile] = useState('');
   const [profilePic, setProfilePic] = useState(null); // Actual file object
   const [profilePicPreview, setProfilePicPreview] = useState(null); // Blob URL for preview
+  const [frontAadhar, setfrontAadhar] = useState(null); // Front image file
+  const [backAadhar, setbackAadhar] = useState(null); // Back image file
+  const [frontAadharPreview, setfrontAadharPreview] = useState(null); // Preview URL for front image
+  const [backAadharPreview, setbackAadharPreview] = useState(null); // Preview URL for back image
+  const [isEditable, setIsEditable] = useState(true); // To check if the profilePic is editable
+  const defaultProfilePic = 'https://res.cloudinary.com/dcfm0aowt/image/upload/v1739604108/user/phnbhd4onynoetzdxqjp.jpg'; // Set this to your default profile picture URL
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const [categories, setCategories] = useState([]);
@@ -40,6 +46,8 @@ const EditProfile = () => {
   const webcamRef = useState(null);
   const [loading, setLoading] = useState(false);
   const location = useLocation();
+
+  console.log(location.state, 'ls----------------')
 
   const navigete = useNavigate()
   const toggleSelection = (category) => {
@@ -50,6 +58,17 @@ const EditProfile = () => {
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
+
+
+  useEffect(() => {
+    if (location?.state?.profilePic === defaultProfilePic) {
+      setIsEditable(true); // If the profile picture is default, allow editing
+    } else {
+      setProfilePic(location?.state?.profilePic);
+      setProfilePicPreview(location?.state?.profilePic);
+      setIsEditable(false); // If the profile picture is not default, disable editing
+    }
+  }, [location?.state]);
 
   const token = JSON.parse(localStorage.getItem('token'))
 
@@ -127,6 +146,26 @@ const EditProfile = () => {
 
     }
   };
+
+  const handlefrontAadharChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const blobUrl = URL.createObjectURL(file);
+      setfrontAadhar(file); // Save the file object
+      setfrontAadharPreview(blobUrl); // Preview URL
+    }
+  };
+
+  const handlebackAadharChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const blobUrl = URL.createObjectURL(file);
+      setbackAadhar(file); // Save the file object
+      setbackAadharPreview(blobUrl); // Preview URL
+    }
+  };
+
+
   const toggleWebcam = () => {
     setIsWebcamOpen((prev) => !prev);
   };
@@ -159,13 +198,18 @@ const EditProfile = () => {
     formData.append('businessName', businessName);
     formData.append('businessAddress', businessAddress);
     formData.append('businessDetaile', businessDetaile);
+    formData.append("frontAadhar", frontAadhar);
+    formData.append("backAadhar", backAadhar);
+
+    // Add the actual file to FormData
     // Add the actual file to FormData
     if (webcamImage) {
       const blob = await (await fetch(webcamImage)).blob();
-      formData.append('image', blob);
+      formData.append('profilePic', blob);  // Change this to 'profilePic'
     } else if (profilePic) {
-      formData.append('image', profilePic);
+      formData.append('profilePic', profilePic);  // Change this to 'profilePic'
     }
+
     setLoading(true)
     try {
       const response = await axios.post(`${backend_API}/auth/updateProfile`, formData, {
@@ -176,17 +220,21 @@ const EditProfile = () => {
       });
       const data = await response.data;
       console.log(data.message, "adited data");
-      
+
       setProfile(data)
       if (response.status === 200) {
         toast(response?.data?.message || "Profile Updated Successfully");
-        navigete('/profile')
+        navigete('/profile');
+        setTimeout(() => {
+          window.location.reload(); // Reload the page after 5 seconds
+        }, 4000); // 5000ms = 5 seconds// This will reload the window
       }
+
 
     } catch (error) {
       console.log(error);
       toast(error?.response?.data?.message)
-    
+
 
       return false;
     } finally {
@@ -206,8 +254,8 @@ const EditProfile = () => {
     setPincode(location?.state?.address?.pincode)
     setAddress(location?.state?.address || {})
     setBusinessCategory(location?.state?.businessCategory || []),
-    setBusinessName(location?.state?.businessName),
-    setBusinessAddress(location?.state?.businessAddress)
+      setBusinessName(location?.state?.businessName),
+      setBusinessAddress(location?.state?.businessAddress)
     setBusinessDetaile(location?.state?.businessDetaile)
     setProfilePic(location?.state?.profilePic)
   }, [location?.state])
@@ -238,20 +286,20 @@ const EditProfile = () => {
                       />
                     </label>
 
-                    {/* Disable file input if webcam is open */}
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handleProfilePictureChange}
                       className="hidden"
-                      name="image"
+                      name="profilePic"
                       id="profilePictureInput"
-                      disabled={isWebcamOpen}
+                      disabled={!isEditable}
                     />
 
                     <button
                       type="button"
                       onClick={toggleWebcam}
+                      disabled={!isEditable}
                       className="position-absolute top-36 start-36 p-2 bg-white rounded-full mx-2"
                     >
                       <FiCamera />
@@ -464,20 +512,67 @@ const EditProfile = () => {
                       </div>
                     </div>
                   </div>
-                  <div className='d-flex justify-content-end'>
+
+                  <div>
+                    <div className="my-1">
+                      <label className="block text-md font-medium p-2 text-bold">Aadhaar Front</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handlefrontAadharChange}
+                        className="w-full border border-2 rounded-md p-2"
+                      />
+                      {frontAadharPreview && (
+                        <img
+                          src={frontAadharPreview}
+                          alt="Aadhaar Front Preview"
+                          className="mt-2"
+                          style={{ width: "200px" }}
+                        />
+                      )}
+                    </div>
+
+                    <div className="my-1">
+                      <label className="block text-md font-medium p-2 text-bold">Aadhaar Back</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handlebackAadharChange}
+                        className="w-full border border-2 rounded-md p-2"
+                      />
+
+                      {backAadharPreview && (
+                        <img
+                          src={backAadharPreview}
+                          alt="Aadhaar Back Preview"
+                          className="mt-2"
+                          style={{ width: "200px" }}
+                        />
+                      )}
+                    </div>
+
+                    {/* Example Modal: Make sure this modal opens correctly */}
+                    {frontAadhar && backAadhar && (
+                      <div className="modal">
+                        <h2>Upload Complete</h2>
+                        <p>Aadhaar Front: {frontAadhar.name}</p>
+                        <p>Aadhaar Back: {backAadhar.name}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className='d-flex justify-content-end mt-5'>
                     <button
                       type="submit"
                       className="d-flex justify-content-center bg-orange text-white px-4  py-3 px-2 rounded-md hover:bg-primary "
                       disabled={loading}
-                   > {loading ?
-                    <div className="spinner-border text-white" role="status">
-                    <span className="sr-only">Loading...</span>
-                     </div> : ' Update'}
-                   <CiEdit className='text-xl text-bold mx-2' />
+                    > {loading ?
+                      <div className="spinner-border text-white" role="status">
+                        <span className="sr-only">Loading...</span>
+                      </div> : ' Save'}
+                      <CiEdit className='text-xl text-bold mx-2' />
 
                     </button>
                   </div>
-
                 </form>
               </div>
             </div>

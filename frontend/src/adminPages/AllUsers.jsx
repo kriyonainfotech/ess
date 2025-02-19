@@ -19,6 +19,7 @@ const UserDetailsModal = ({ user, onClose, onApprove }) => {
   const [permanentAddress, setPermanentAddress] = useState(user.permanentAddress || "");
   const [aadharNumber, setAadharNumber] = useState(user.aadharNumber || "");
   const [loading, setLoading] = useState(false);
+  const [profilePic, setProfilePic] = useState(user.profilePic);
   const [userId, setUserId] = useState(user._id);
 
   const aadharImages = [user.frontAadhar, user.backAadhar];
@@ -76,6 +77,41 @@ const UserDetailsModal = ({ user, onClose, onApprove }) => {
     }
   };
 
+  const updateProfilePic = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${backend_API}/auth/update-profile-pic`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user._id,
+          profilePic: "https://res.cloudinary.com/dcfm0aowt/image/upload/v1739604108/user/phnbhd4onynoetzdxqjp.jpg"
+        })
+      });
+
+      const data = await response.json();
+      console.log(data, 'response of allow reset')
+      if (response.ok) {
+        setProfilePic(data.profilePic); // Update UI
+        toast.success("Profile picture updated successfully!");
+      } else {
+        toast.error(data.message || "Failed to update profile picture.");
+      }
+    } catch (error) {
+      console.log("API Error:", error);
+      toast.error("Something went wrong while updating profile picture.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetProfilePic = () => {
+    setProfilePic(user.profilePic); // Reset to original
+    toast.info("Profile picture reset.");
+  };
+
   return (
     <div className="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
 
@@ -85,9 +121,13 @@ const UserDetailsModal = ({ user, onClose, onApprove }) => {
           <table className="table-auto w-full border-collapse border border-gray-300 bg-light">
             <tbody >
               <tr>
-                <td className="border border-gray-300 px-4 py-2 font-semibold">ProfilePic</td>
-                <td className="border border-gray-300 px-4 py-2">
-                  <img src={user.profilePic} width={50} alt="Profile" className="cursor-pointer" onClick={() => setZoomedProfile(true)} />
+                <td className="border border-gray-300 px-4 py-2 font-semibold">Profile Picture</td>
+                <td className="border border-gray-300 px-4 py-2 flex items-center justify-between gap-2">
+                  <img src={profilePic} width={50} alt="Profile" className="cursor-pointer" onClick={() => setZoomedProfile(true)} />
+                  <button onClick={updateProfilePic} className="bg-blue-500 text-white px-3 py-1 rounded" disabled={loading}>
+                    {loading ? "Updating..." : "Allow Update"}
+                  </button>
+
                 </td>
               </tr>
               <tr>
@@ -122,7 +162,7 @@ const UserDetailsModal = ({ user, onClose, onApprove }) => {
               </tr>
               <tr>
                 <td className="border border-gray-300 px-4 py-2 font-semibold">Aadhar</td>
-                <td className="border border-gray-300 px-4 py-2 flex gap-2">
+                <td className="border border-gray-300 px-4 py-2 flex items-center justify-between gap-2">
                   {aadharImages.filter(Boolean).length > 0 ? (
                     <div className="flex gap-2">
                       {aadharImages.map((img, index) => (
@@ -143,7 +183,7 @@ const UserDetailsModal = ({ user, onClose, onApprove }) => {
                   )}
                   {aadharImages.filter(Boolean).length > 0 && (
                     <div className="flex flex-col justify-center">
-                      <button onClick={handleDeleteAadhar} className="bg-red-500 text-white px-4 py-2 rounded" disabled={loading}>
+                      <button onClick={handleDeleteAadhar} className="bg-red-500 text-white btn-sm px-4 py-1 rounded" disabled={loading}>
                         {loading ? "Deleting..." : "Delete Aadhar"}
                       </button>
                     </div>

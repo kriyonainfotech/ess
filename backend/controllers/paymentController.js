@@ -1,7 +1,7 @@
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
 const UserModel = require("../model/user");
-// const { distributeReferralRewards } = require("./authController");
+const { sendNotification } = require("../controllers/sendController");
 
 const razorpayInstance = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -107,6 +107,36 @@ const distributeReferralRewards = async (newUserId, referrerId) => {
         },
       }
     );
+
+    // 📢 Send notification only for Level 1 referrer
+    if (level === 0) {
+      const referrerData = await UserModel.findById(currentReferrer).select(
+        "_id fcmToken"
+      );
+      if (referrerData?.fcmToken) {
+        await sendNotification({
+          senderName: "System",
+          fcmToken: referrerData.fcmToken,
+          title: "Referral Bonus Earned 🎉",
+          message: `You earned ₹${earningAmount} for referring a new user!`,
+          receiverId: referrerData._id,
+        });
+      }
+    }
+
+    // 📢 Send notification to all referrers (all levels)
+    // const referrerData = await UserModel.findById(currentReferrer).select(
+    //   "_id fcmToken"
+    // );
+    // if (referrerData?.fcmToken) {
+    //   await sendNotification({
+    //     senderName: "System",
+    //     fcmToken: referrerData.fcmToken,
+    //     title: "Referral Bonus Earned 🎉",
+    //     message: `You earned ₹${earningAmount} from a referral at Level ${level + 1}!`,
+    //     receiverId: referrerData._id,
+    //   });
+    // }
 
     // Move to the next referrer (if exists)
     const referrerData = await UserModel.findById(currentReferrer).select(

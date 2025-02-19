@@ -40,13 +40,13 @@ function Registration() {
   useEffect(() => {
     // Extract referral code from URL
     const queryParams = new URLSearchParams(location.search);
-    console.log(queryParams, "queryParams");
+    // console.log(queryParams, "queryParams");
     const code = queryParams.get("referralCode");
-    console.log(code, "code");
+    // console.log(code, "code");
     if (code) setReferralCode(code);
   }, []);
 
-  console.log(referralCode, "referralCode");
+  // console.log(referralCode, "referralCode");
 
   const validateInputs = () => {
     const newErrors = {};
@@ -169,7 +169,7 @@ function Registration() {
 
   return (
     <>
-
+      {/* 
       <div className="container py-24">
         <div className="row mx-auto ">
           <div className="registerpage shadow bg-white p-0">
@@ -193,7 +193,7 @@ function Registration() {
                 </div>
               </div>
             </div>
-            <form action="" onSubmit={handleSubmits} className='py-5'>
+            <form action="" onSubmit={handleSubmits} className=''>
               <div className='px-16'>
                 {
                   referralCode ? (
@@ -331,7 +331,175 @@ function Registration() {
           </div>
 
         </div>
+      </div> */}
+
+      <div className="container mx-auto py-16">
+        <div className="max-w-full mx-auto shadow-lg bg-white rounded-lg overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-2">
+            {/* Left Side (Logo & Illustration) */}
+            <div className="flex flex-col items-center justify-center bg-gray-100 p-8">
+              <img src={logo} width={100} alt="Logo" className="mb-6" />
+              <img
+                src="https://readymadeui.com/signin-image.webp"
+                width={300}
+                alt="Sign Up Illustration"
+                className="max-w-xs"
+              />
+            </div>
+
+            {/* Right Side (Form) */}
+            <div className="p-8">
+              <h2 className="text-2xl font-semibold text-gray-800 text-center mb-3">Create an Account</h2>
+              <form onSubmit={handleSubmits}>
+                {/* Referral Code (If available) */}
+                {referralCode && (
+                  <div className="mb-4">
+                    <label className="text-gray-600 text-sm">Referral Code:</label>
+                    <input
+                      type="text"
+                      value={referralCode}
+                      disabled
+                      className="w-full px-4 py-2 border rounded-md bg-gray-200"
+                    />
+                  </div>
+                )}
+
+                {/* Name & Email */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-400"
+                      placeholder="Full Name"
+                    />
+                    {errors.name && <span className="text-red-500 text-sm">{errors.name}</span>}
+                  </div>
+                  <div>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-400"
+                      placeholder="Email"
+                    />
+                    {errors.email ? (
+                      <span className="text-red-500 text-sm">{errors.email}</span>
+                    ) : (
+                      <span className="text-gray-500 text-xs">Email must end with @gmail.com</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Password & Confirm Password */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-400"
+                      placeholder="Password"
+                    />
+                    <button type="button" onClick={togglePasswordVisibility} className="absolute right-4 top-3 text-gray-600">
+                      {showPassword ? <FaEyeSlash /> : <FaEye />}
+                    </button>
+                    {errors.password && <span className="text-red-500 text-sm">{errors.password}</span>}
+                  </div>
+                  <div>
+                    <input
+                      type="password"
+                      value={confirmpassword}
+                      onChange={(e) => setConfirmpassword(e.target.value)}
+                      className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-400"
+                      placeholder="Confirm Password"
+                    />
+                    {errors.confirmpassword && <span className="text-red-500 text-sm">{errors.confirmpassword}</span>}
+                  </div>
+                </div>
+
+                {/* Phone */}
+                <div className="mt-4">
+                  <input
+                    type="text"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-400"
+                    placeholder="Phone Number"
+                  />
+                  {errors.phone && <span className="text-red-500 text-sm">{errors.phone}</span>}
+                </div>
+
+                {/* Address Fields */}
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <input
+                    type="text"
+                    value={area}
+                    onChange={(e) => setArea(e.target.value)}
+                    className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-400"
+                    placeholder="Area"
+                  />
+                  <input
+                    type="text"
+                    value={pincode}
+                    onChange={handlePincodeChange}
+                    maxLength="6"
+                    className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-400"
+                    placeholder="Pincode"
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-4 mt-4">
+                  <input
+                    type="text"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-400"
+                    placeholder="City"
+                  />
+                  <input
+                    type="text"
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                    className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-400"
+                    placeholder="State"
+                  />
+                  <input
+                    type="text"
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-400"
+                    placeholder="Country"
+                  />
+                </div>
+
+                {/* Submit Button */}
+                <div className="mt-6 flex justify-center">
+                  <button
+                    type="submit"
+                    className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-300 flex items-center gap-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                      <circle cx="8.5" cy={7} r={4} />
+                      <path d="M20 8v6M23 11h-6" />
+                    </svg>
+                    Sign Up
+                  </button>
+                </div>
+
+                {/* Login Link */}
+                <p className="mt-4 text-sm text-center text-gray-600">
+                  Already have an account?
+                  <Link to="/login" className="text-success link-underline-success font-semibold hover:underline text-lg ml-1">Log in</Link>
+                </p>
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
+
     </>
   )
 }

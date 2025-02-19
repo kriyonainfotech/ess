@@ -14,6 +14,7 @@ const Senedrequest = ({ sendedRequest, setSendedRequest }) => {
     const user = useContext(UserContext);
     // console.log(user.user._id)
     const [selectedRequest, setSelectedRequest] = useState(null);
+    const [status, setStatus] = useState(null);
     const [rating, setRating] = useState(0);
     const token = JSON.parse(localStorage.getItem('token'));
     console.log(sendedRequest, "sendedRequest");
@@ -41,6 +42,9 @@ const Senedrequest = ({ sendedRequest, setSendedRequest }) => {
 
                                 if (data.success) {
                                     toast.success("Request deleted successfully!");
+                                    setTimeout(() => {
+                                        window.location.reload(); // Reload the page after 5 seconds
+                                    }, 4000); // 5000ms = 5 seconds
                                     // Optionally update UI (e.g., remove request from state)
                                 } else {
                                     toast.error(data.message || "Failed to delete request.");
@@ -63,6 +67,29 @@ const Senedrequest = ({ sendedRequest, setSendedRequest }) => {
             </div>,
             { autoClose: false, closeOnClick: false }
         );
+    };
+    const handleAction = async (id, requestId, newStatus) => {
+        try {
+            const response = await axios.post(
+                `${backend_API}/request/updateRequestStatus`,
+                { userId: id, requestId, status: newStatus },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            if (response.status === 200) {
+                toast.success(`Request ${newStatus}`);
+                setStatus(newStatus);
+                setSendedRequest((prev) =>
+                    prev.map((req) =>
+                        req.requestId === requestId ? { ...req, status: newStatus } : req
+                    )
+                );
+            } else {
+                toast.error("Failed to update request status");
+            }
+        } catch (error) {
+            toast.error("Failed to update request status");
+        }
     };
 
 
@@ -142,9 +169,7 @@ const Senedrequest = ({ sendedRequest, setSendedRequest }) => {
                                                 ? "Request accepted contact the user"
                                                 : ""
                                 }
-                                className={`bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden ${["rejected", "cancelled"].includes(send.status)
-                                    ? "opacity-50 grayscale"
-                                    : ""
+                                className={`bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden ${send.status === "rejected" ? "opacity-50 grayscale" : ""
                                     }`}
                             >
                                 <div className="relative">
@@ -194,7 +219,7 @@ const Senedrequest = ({ sendedRequest, setSendedRequest }) => {
                                                     className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                                                     onClick={() => cancelRequest(send.requestId)}
                                                 >
-                                                    Cancel
+                                                    Delete request
                                                 </button>
                                             </>
                                         )}
@@ -208,7 +233,7 @@ const Senedrequest = ({ sendedRequest, setSendedRequest }) => {
                                                 </a>
                                                 <button
                                                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                                                    onClick={() => cancelRequest(send.receiverId, send.requestId, "completed")}
+                                                    onClick={() => handleAction(send.receiverId, send.requestId, "completed")}
                                                 >
                                                     Completed
                                                 </button>
@@ -220,6 +245,14 @@ const Senedrequest = ({ sendedRequest, setSendedRequest }) => {
                                                 onClick={() => openModal(send)}
                                             >
                                                 Rate User
+                                            </button>
+                                        )}
+                                        {send.status === "cancelled" && (
+                                            <button
+                                                className="px-4 w-100 py-2 bg-red-600 text-white rounded-lg hover:bg-red-900 transition"
+                                                onClick={() => cancelRequest(send.requestId)}
+                                            >
+                                                Delete Request
                                             </button>
                                         )}
                                     </div>

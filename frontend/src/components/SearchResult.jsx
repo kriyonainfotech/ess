@@ -34,7 +34,6 @@ const SearchResult = ({ Usersdata, token }) => {
         ));
     };
 
-
     useEffect(() => {
         const fetchRequests = async () => {
             setLoading(true);
@@ -45,21 +44,41 @@ const SearchResult = ({ Usersdata, token }) => {
                         'Authorization': `Bearer ${token}`,
                     },
                 });
-                if (response.status === 200) {
-                    setAllRequest(response.data);
-                    const currentRequest = response.data.sendedRequests.find(req => req.user._id === Usersdata?._id);
-                    setRequestStatus(currentRequest?.status || null);
+
+                console.log(response.data.requests);
+
+                if (response.status === 200 && response.data.requests) {
+                    setAllRequest(response.data.requests);
+
+                    const sendedRequests = response.data.requests.sended_requests || [];
+                    const receivedRequests = response.data.requests.received_requests || [];
+
+                    // Find all requests sent to the current user
+                    const userRequests = sendedRequests.filter(req => req.user?._id === Usersdata?._id);
+                    const receivedRequest = receivedRequests.find(req => req.user?._id === Usersdata?._id);
+
+                    // Determine the correct request status
+                    let status = null;
+                    if (userRequests.some(req => req.status === "pending")) {
+                        status = "pending";
+                    } else if (userRequests.some(req => req.status === "completed" || req.status === "rated")) {
+                        status = "completed"; // Treat "rated" as completed
+                    }
+
+                    setRequestStatus(status);
+                    console.log("Updated Request Status:", status);
                 }
             } catch (error) {
                 console.error('Error fetching requests:', error.response?.data || error.message);
-                toast(error?.response?.data?.message)
-
+                toast(error?.response?.data?.message);
             } finally {
                 setLoading(false);
             }
         };
         fetchRequests();
     }, [Usersdata, token]);
+
+
 
     const sendRequest = async (userId, requestMessage = "I NEED YOUR SERVICE") => {
         if (Usersdata?.userstatus === 'unavailable') {
@@ -80,6 +99,9 @@ const SearchResult = ({ Usersdata, token }) => {
                 setRequestStatus('pending');
                 toast(response.data.message || "Request Sent Successfully!");
                 navigate('/work');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
             } else {
                 toast.error(response.data.message);
             }
@@ -135,10 +157,18 @@ const SearchResult = ({ Usersdata, token }) => {
 
                         {/* Action Buttons */}
                         <div className="mt-3">
-                            {requestStatus === 'pending' ? (
-                                <Link to={`tel:${Usersdata.phone}`} className="bg-green-600 text-white font-semibold px-4 py-2 rounded-md shadow-md hover:bg-green-700">
-                                    Contact Now
-                                </Link>
+                            {requestStatus === 'pending' && 'accepted' ? (
+                                <>
+                                    <Link to={`tel:${Usersdata.phone}`} className="bg-green-600 text-white font-semibold px-4 py-2 rounded-md shadow-md hover:bg-green-700">
+                                        Contact Now
+                                    </Link>
+                                    <button
+                                        className="bg-warning text-white w-100 font-semibold px-4 py-2 rounded-md shadow-md hover:bg-orange-700 transition duration-200"
+                                        onClick={() => navigate("/work")} // Redirect to request details page
+                                    >
+                                        View Request
+                                    </button>
+                                </>
                             ) : (
                                 <button
                                     className="bg-blue-600 text-white font-semibold px-4 py-2 w-100 rounded-md shadow-md hover:bg-blue-700 transition duration-200"
@@ -149,6 +179,7 @@ const SearchResult = ({ Usersdata, token }) => {
                                 </button>
                             )}
                         </div>
+
                     </div>
                 </div>
 

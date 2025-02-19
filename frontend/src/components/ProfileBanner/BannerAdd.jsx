@@ -54,22 +54,25 @@ const BannerAdd = () => {
 
   return (
     <>
-      <form action="" onSubmit={hendleSubmitIng} >
-        <div className='' >
-          <label htmlFor="file-upload" className="h-[100px] btn d-inline-block border border-orange d-flex justify-content-center align-items-center  text-center ">
-            Add Offer Benner
-          </label>
-          <input type="file" id="file-upload" name="banner" onChange={handleImageChange} />
-          {preview && <img src={preview} alt="Preview" width="200" />}
-          <button type='submit' className='btn bg-green p-0 p-1 text-white mt-1' disabled={loading}>
-            {loading ?
-              <div className="spinner-border text-white" role="status">
-                <span className="sr-only">Loading...</span>
-              </div> : 'Add'}
-            
-          </button>
-        </div>
+      <form onSubmit={hendleSubmitIng} className="flex flex-col items-center gap-4 p-4 border border-gray-300 rounded-lg shadow-md bg-white">
+        <label htmlFor="file-upload" className="cursor-pointer flex items-center justify-center w-full max-w-xs h-24 border-2 border-dashed border-orange-500 text-orange-600 font-semibold rounded-lg hover:bg-orange-50 transition">
+          Add Offer Banner
+        </label>
+        <input type="file" id="file-upload" name="banner" onChange={handleImageChange} className="hidden" />
+
+        {preview && (
+          <img src={preview} alt="Preview" className="w-48 h-auto rounded-md shadow-sm" />
+        )}
+
+        <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition disabled:opacity-50" disabled={loading}>
+          {loading ? (
+            <div className="spinner-border text-white w-5 h-5 animate-spin" role="status"></div>
+          ) : (
+            "Add"
+          )}
+        </button>
       </form>
+
 
     </>
   )

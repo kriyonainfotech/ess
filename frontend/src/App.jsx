@@ -21,6 +21,7 @@ import AboutUs from "./Pages/AboutUs";
 import CreatUser from "./adminPages/CreatUser";
 import AssignReferrals from "./adminPages/AssignRefferal";
 import RemarkPage from "./adminPages/RemarkPage";
+import AadharUploadPage from "./adminPages/AadharUploadPage";
 
 // Lazy-loaded components
 const Login = lazy(() => import("./components/Login"));
@@ -105,6 +106,7 @@ export default function App() {
                 <Route path="/privacyPolicy" element={<PrivacyPolicy />} />
                 <Route path="/aboutus" element={<AboutUs />} />
                 <Route path="/work/sendrequest" element={<Senedrequest />} />
+                <Route path='/upload-adhaar' element={<AadharUploadPage />} />
 
                 {/* Admin Routes */}
                 <Route path="/admin" element={<ProtectAdmin><Dashboard /></ProtectAdmin>} />

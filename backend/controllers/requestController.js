@@ -1,28 +1,7 @@
 const User = require("../model/user"); // Update the path as needed
 const mongoose = require("mongoose");
-// const { sendNotification } = require("../config/firebase");
-const sendNotification = async ({ fcmToken, title, message }) => {
-  if (!fcmToken) {
-    console.error("FCM token is missing. Notification not sent.");
-    return;
-  }
+const { sendNotification } = require("./sendController");
 
-  const payload = {
-    token: fcmToken,
-    notification: {
-      title,
-      body: message,
-    },
-    data: { click_action: "FLUTTER_NOTIFICATION_CLICK" }, // Optional custom data
-  };
-
-  try {
-    await admin.messaging().send(payload);
-    console.log("Notification sent successfully:", title);
-  } catch (error) {
-    console.error("Error sending notification:", error);
-  }
-};
 const sendRequestNotification = async (userId, title, message) => {
   try {
     const user = await User.findById(userId);
@@ -136,7 +115,7 @@ const sentRequest = async (req, res) => {
       receiverId: receiver._id, // Include receiver's ID to store the notification
     };
     console.log("🔵 Notification:", Notification);
-    // await sendNotification(Notification);
+    await sendNotification(Notification);
 
     return res.status(200).send({
       success: true,
@@ -152,6 +131,30 @@ const sentRequest = async (req, res) => {
       message: "An error occurred during the request.",
       error: error.message,
     });
+  }
+};
+
+const getUserRequests = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const user = await User.findById(userId)
+      .select("sended_requests received_requests")
+      .populate("sended_requests.user", "name email")
+      .populate("received_requests.user", "name email");
+
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+
+    res.json({
+      success: true,
+      requests: user,
+    });
+  } catch (error) {
+    console.error("Error fetching user requests:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -639,6 +642,29 @@ const updateRequestStatus = async (req, res) => {
         .json({ success: false, message: "❌ Request update failed!" });
     }
 
+    const sender = await User.findById(request.user).lean();
+    const receiver = await User.findById(userId).lean();
+
+    console.log({ sender, receiver }, "User Data");
+
+    if (!sender || !receiver) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found!" });
+    }
+
+    if (sender && receiver && sender.fcmToken) {
+      const notification = {
+        senderName: receiver.name,
+        fcmToken: sender.fcmToken,
+        title: "Request Status Updated",
+        message: `${receiver.name} has updated the request status to '${status}'.`,
+        receiverId: sender._id,
+      };
+      console.log(notification, "n");
+      await sendNotification(notification);
+    }
+
     return res.status(200).json({
       success: true,
       message: `✅ Request '${status}' successfully! `,
@@ -771,6 +797,22 @@ const updateRequestStatusMobile = async (req, res) => {
       return res
         .status(400)
         .json({ success: false, message: "❌ Request update failed!" });
+    }
+
+    // Fetch sender and receiver details for notification
+    const sender = await User.findById(request.user);
+    const receiver = await User.findById(userId);
+
+    if (sender && receiver && sender.fcmToken) {
+      const notification = {
+        senderName: receiver.name,
+        fcmToken: sender.fcmToken,
+        title: "Request Status Updated",
+        message: `${receiver.name} has updated the request status to '${status}'.`,
+        receiverId: sender._id,
+      };
+      console.log(notification, "n");
+      await sendNotification(notification);
     }
 
     return res.status(200).json({
@@ -981,4 +1023,5 @@ module.exports = {
   getReceivedRequests,
   getUsersWithRequestsCounts,
   updateRequestStatusMobile,
+  getUserRequests,
 };

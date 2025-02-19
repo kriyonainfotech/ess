@@ -12,6 +12,6 @@ routes.use("/referal", require("./referralRoute"));
 routes.use("/payment", require("./paymentRoute"));
 routes.use("/support", require("./supportRoute"));
 routes.use("/remark", require("./remarkRoute"));
-routes.use("/notifications", require("./notificationRoute"));
+// routes.use("/notifications", require("./notificationRoute"));
 
 module.exports = routes;

@@ -215,47 +215,86 @@ const setReferral = async (req, res) => {
   }
 };
 
-// admin use only
-const deleteAdharPics = async (req, res) => {
+const getUserAadhaarDetails = async (req, res) => {
   try {
-    const { userId } = req.body;
-    console.log(userId);
-    // Fetch user
+    // List of user IDs
+    const userIds = [
+      "678b540577b05d9ae4d686d0",
+      "678b56056939b01acd70d9dd",
+      "678b5e4038264e14724d5da9",
+      "678b60cd50c6a3b37c9cda32",
+      "678b619350c6a3b37c9cda9e",
+      "678b6a868ab121215655d7de",
+      "678b6dc8287200ee689611f1",
+      "678d6ce8f1277af44ff3f136",
+      "678d8059ac1ce7729741da66",
+      "678ded4cdac94eaf3e0f98c8",
+      "678df13db7a93b00570c002a",
+      "678dfc5d70c781f9a6c681d2",
+      "678e2a86605b0af45dbad68a",
+      "678e45d06973260305c4126c",
+      "6790bb735eb719a777fe550c",
+      "6790bbd25eb719a777fe55d3",
+      "6791ddea5eb719a777fe948b",
+      "679883e23550a99555364e6e",
+      "6799b12ef577113f0f8e1d2d",
+      "6799cf2157029b6c015a400a",
+      "679a0700dde2c802e7f7f0cb",
+      "679a175f2a783b9adf84494b",
+      "679a213b2a783b9adf84784d",
+      "679a290d8141997906755198",
+      "679b61f39d362867d58ce360",
+    ];
 
-    const user = await UserModel.findById(userId);
-    if (!user) {
+    // Find users based on the list of IDs
+    const users = await UserModel.find({ _id: { $in: userIds } }).select(
+      "name frontAadhar backAadhar"
+    );
+
+    if (!users || users.length === 0) {
       return res
         .status(404)
-        .json({ success: false, message: "User not found" });
+        .json({ success: false, message: "No users found" });
     }
 
-    const cloudinary = require("cloudinary").v2;
-
-    const deleteCloudinaryImage = async (imageUrl) => {
-      if (imageUrl) {
-        const publicId = imageUrl.split("/").pop().split(".")[0]; // Extract public ID
-        await cloudinary.uploader.destroy(publicId);
-      }
-    };
-
-    // await deleteCloudinaryImage(user.profilePic);
-    await deleteCloudinaryImage(user.frontAadhar);
-    await deleteCloudinaryImage(user.backAadhar);
-
-    // Update only frontAadhar and backAadhar (Don't touch aadharNumber)
-    await UserModel.findByIdAndUpdate(userId, {
-      $unset: { frontAadhar: 1, backAadhar: 1 }, // Removes these fields
-    });
-
-    return res.json({
+    // Send the response with the users' Aadhaar details
+    res.status(200).json({
       success: true,
-      message: "Aadhar images deleted successfully",
+      users,
     });
   } catch (error) {
-    console.error("Error deleting Aadhar images:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error" });
+    console.error("Error fetching user Aadhaar details:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+const updateProfilePic = async (req, res) => {
+  try {
+    const { profilePic, userId } = req.body;
+    if (!profilePic) {
+      return res
+        .status(400)
+        .json({ message: "Profile picture URL is required" });
+    }
+
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      userId, // Extracted from auth middleware
+      { profilePic },
+      { new: true }
+    );
+    console.log(updatedUser, "updatedUser");
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      message: "Profile picture updated successfully",
+      profilePic: updatedUser.profilePic,
+    });
+  } catch (error) {
+    console.error("Error updating profile picture:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -263,5 +302,6 @@ module.exports = {
   getUsersByBCategory,
   setReferral,
   updateUserAddressAndAadhar,
-  deleteAdharPics,
+  getUserAadhaarDetails,
+  updateProfilePic,
 };

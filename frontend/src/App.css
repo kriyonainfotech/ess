@@ -108,11 +108,6 @@ h5,
 h6 {
   margin: 0 !important;
 }
-
-input[type="file"] {
-  display: none;
-}
-
 .box {
   display: -webkit-box;
   -webkit-line-clamp: 5; /* Number of lines that fit within the box */
@@ -120,6 +115,9 @@ input[type="file"] {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: normal;
+}
+.hidden {
+  display: none !important;
 }
 .text {
   display: -webkit-box;
@@ -291,11 +289,13 @@ input[type="file"] {
 }
 .banner-Btn {
   position: absolute;
-  top: 10%;
-  right: -4%;
+  top: 7%;
+  right: 0%;
   transform: translate(-50%, -50%);
 }
-
+input {
+  outline: none !important;
+}
 /* card-banners end */
 .webcam-overlay {
   position: fixed;

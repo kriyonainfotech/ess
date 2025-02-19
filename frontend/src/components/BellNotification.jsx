@@ -124,9 +124,9 @@ const BellNotification = () => {
                     ) : (
                         <ul>
                             {notifications.map((notification) => (
-                                <li 
-                                    key={notification._id} 
-                                    className="notification-item w-100 d-flex justify-content-between text-sm cursor-pointer" 
+                                <li
+                                    key={notification._id}
+                                    className="notification-item w-100 d-flex justify-content-between text-sm cursor-pointer"
                                     onClick={() => handleNotificationClick(notification)}
                                 >
                                     <div>
@@ -136,7 +136,7 @@ const BellNotification = () => {
                                         <FaTimes
                                             className="delete-icon"
                                             onClick={(e) => {
-                                                e.stopPropagation(); 
+                                                e.stopPropagation();
                                                 handleDeleteNotification(notification._id);
                                             }}
                                         />
