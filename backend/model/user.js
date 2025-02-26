@@ -17,6 +17,7 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    ekyc: { type: mongoose.Schema.Types.ObjectId, ref: "KYC" }, // Reference KYC
     address: {
       area: {
         type: String,
@@ -232,11 +233,15 @@ const userSchema = new mongoose.Schema(
         createdAt: { type: Date, default: Date.now },
       },
     ],
+    withdrawalHistory: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "Withdrawal" },
+    ],
     notifications: [
       {
         senderName: String,
         title: String,
         message: String,
+        type: { type: String, enum: ["referral", "reward", "new_work"] },
         timestamp: { type: Date, default: Date.now },
       },
     ],

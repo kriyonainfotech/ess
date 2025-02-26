@@ -108,6 +108,7 @@ const sentRequest = async (req, res) => {
 
     console.log("📌 Sending notification...");
     const Notification = {
+      type: "new_work",
       senderName: sender.name,
       fcmToken: receiver.fcmToken,
       title: "New Work",

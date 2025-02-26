@@ -8,6 +8,7 @@ const sendNotification = async ({
   title,
   message,
   receiverId,
+  type,
 }) => {
   if (!fcmToken || !title || !message || !senderName || !receiverId) {
     console.log("Error: Missing required parameters");
@@ -28,7 +29,13 @@ const sendNotification = async ({
       { _id: receiverId },
       {
         $push: {
-          notifications: { senderName, title, message, timestamp: new Date() },
+          notifications: {
+            type,
+            senderName,
+            title,
+            message,
+            timestamp: new Date(),
+          },
         },
       }
     );

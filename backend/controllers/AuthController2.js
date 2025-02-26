@@ -1,4 +1,5 @@
 const UserModel = require("../model/user");
+
 const {
   distributeReferralRewards,
 } = require("../controllers/paymentController");

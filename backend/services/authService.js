@@ -47,9 +47,10 @@ const checkExistingUser = async (email, phone) => {
 
 // ✅ 4. Find Referrer (if applicable)
 const findReferrer = async (referralCode) => {
-  if (!referralCode) return null;
+  if (!referralCode) return null; // ✅ If no referral code, return null
 
   let referrer = null;
+
   if (/^\d{10}$/.test(referralCode)) {
     referrer = await UserModel.findOne({ phone: referralCode }).select(
       "_id fcmToken"
@@ -58,17 +59,14 @@ const findReferrer = async (referralCode) => {
     referrer = await UserModel.findById(referralCode).select("_id fcmToken");
   }
 
-  if (!referrer) {
-    throw new Error("Invalid referral code");
-  }
-
-  return referrer;
+  return referrer; // ✅ If no referrer is found, just return null (NO ERROR)
 };
 
 // ✅ 5. Notify Referrer
 const notifyReferrer = async (referrer, userName) => {
   if (referrer && referrer.fcmToken) {
     await sendNotification({
+      type: "referral",
       senderName: "System",
       fcmToken: referrer.fcmToken,
       title: "New Referral Registered 🎉",

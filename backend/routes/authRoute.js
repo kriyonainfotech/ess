@@ -33,7 +33,6 @@ const {
   getUsersByBCategory,
   updateUserAddressAndAadhar,
   setReferral,
-  deleteAdharPics,
   getUserAadhaarDetails,
   updateProfilePic,
 } = require("../controllers/AuthController2");

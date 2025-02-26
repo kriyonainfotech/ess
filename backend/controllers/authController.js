@@ -649,15 +649,17 @@ const updateUsersPaymentVerified = async (req, res) => {
 
 const updateReferralChain = async (referrerId, newUserId) => {
   // Default referral IDs (replace these with actual user IDs from your database)
-  const defaultReferrerIds = ["678dd875b7a93b00570bfa5b"];
+  // const defaultReferrerIds = ["678dd875b7a93b00570bfa5b"];
 
   // If referrerId is null, assign a random one from the default list
-  if (!referrerId) {
-    referrerId =
-      defaultReferrerIds[Math.floor(Math.random() * defaultReferrerIds.length)];
-  }
+  // if (!referrerId) {
+  //   referrerId =
+  //     defaultReferrerIds[Math.floor(Math.random() * defaultReferrerIds.length)];
+  // }
+  // 5️⃣ Find referrer (ONLY if referralCode exists)
+  const referrer = referralCode ? await findReferrer(referralCode) : null;
 
-  const referrer = await UserModel.findById(referrerId);
+  // const referrer = await UserModel.findById(referrerId);
   if (referrer) {
     if (!referrer.referrals.includes(newUserId)) {
       referrer.referrals.push(newUserId); // Add new user to the referrer's referrals list

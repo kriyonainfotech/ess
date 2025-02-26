@@ -115,6 +115,7 @@ const distributeReferralRewards = async (newUserId, referrerId) => {
       );
       if (referrerData?.fcmToken) {
         await sendNotification({
+          type: "reward",
           senderName: "System",
           fcmToken: referrerData.fcmToken,
           title: "Referral Bonus Earned 🎉",
